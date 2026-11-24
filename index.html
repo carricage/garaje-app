@@ -28,12 +28,15 @@ body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:var(--bg
 .vp-btn{border:0;background:0;color:var(--mu);padding:4px 10px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer}
 .vp-btn.active{background:var(--sb);color:#fff}
 .data-bar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px;padding:8px 12px;background:var(--sf);border:1px solid var(--bd);border-radius:10px}
+.mob-quick-bar{display:none}
+.stage.vp-mobile .mob-quick-bar,.stage.vp-tablet .mob-quick-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;padding:7px 10px;background:var(--sf);border:1px solid var(--bd);border-radius:10px}
 .mobnav{display:none}
 .stage.vp-mobile .mobnav,.stage.vp-tablet .mobnav{display:grid;grid-template-columns:repeat(4,1fr);background:var(--sb);border-radius:10px;padding:5px;margin-top:16px}
 .stage.vp-mobile .mobnav button,.stage.vp-tablet .mobnav button{border:0;background:0;color:var(--sbt);font-size:.72rem;font-weight:600;padding:6px 2px;border-radius:7px;cursor:pointer}
 .stage.vp-mobile .mobnav button.active,.stage.vp-tablet .mobnav button.active{background:var(--sba);color:#fff}
 @media(max-width:600px){
   .sidebar,.vp-bar,.data-bar{display:none!important}
+  .mob-quick-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;padding:7px 10px;background:var(--sf);border:1px solid var(--bd);border-radius:10px}
   .wrap{padding:12px}
   .stage,.stage.vp-tablet,.stage.vp-mobile{
     max-width:100%!important;
@@ -115,18 +118,29 @@ textarea{min-height:64px;resize:vertical}
       </nav>
     </div>
     <div class="sfoot">
-      <button id="btnExp" class="smini" type="button">Exportar JSON</button>
-      <label class="smini" style="margin:0">Importar JSON<input type="file" id="impInp" accept=".json,application/json" class="hidden" /></label>
+      <button id="btnExp" class="smini" type="button">Copiar</button>
+      <button id="btnImpSide" class="smini" type="button">Restaurar</button>
+      <input type="file" id="impInp" accept=".json,application/json" class="hidden" />
     </div>
   </aside>
 
   <div class="wrap">
     <div id="vpStage" class="stage">
+      <div class="mob-quick-bar">
+        <span class="muted" style="font-size:.76rem">Copia:</span>
+        <div class="acts" style="gap:6px">
+          <button id="btnExpMob" class="btn-l" style="padding:4px 9px;font-size:.75rem" type="button">Copiar</button>
+          <button id="btnImpMob" class="btn-l" style="padding:4px 9px;font-size:.75rem" type="button">Restaurar</button>
+          <input type="file" id="impInpMob" accept=".json,application/json" class="hidden" />
+        </div>
+      </div>
+
       <div class="data-bar">
-        <span class="muted" style="font-size:.78rem">Copia local del dispositivo:</span>
+        <span id="trialStatusTxt" class="muted" style="font-size:.78rem">Prueba activa: 15 días · Máx. 2 vehículos</span>
         <div class="acts">
-          <button id="btnExpTop" class="btn-l" style="padding:5px 10px;font-size:.78rem" type="button">Exportar JSON</button>
-          <label class="btn-l" style="padding:5px 10px;font-size:.78rem;margin:0;cursor:pointer">Importar JSON<input type="file" id="impInpTop" accept=".json,application/json" class="hidden" /></label>
+          <button id="btnExpTop" class="btn-l" style="padding:5px 10px;font-size:.78rem" type="button">Copiar</button>
+          <button id="btnImpTop" class="btn-l" style="padding:5px 10px;font-size:.78rem" type="button">Restaurar</button>
+          <input type="file" id="impInpTop" accept=".json,application/json" class="hidden" />
         </div>
       </div>
 
@@ -165,14 +179,14 @@ textarea{min-height:64px;resize:vertical}
             <div class="flex" style="margin-bottom:10px"><strong id="carFormTitle">Nuevo vehículo</strong><button id="cancelCarBtn" class="btn-l" type="button">Cancelar</button></div>
             <form id="carForm"><input type="hidden" id="cId" />
               <div class="g3">
-                <div class="field"><label>Alias *</label><input id="cAlias" required /></div>
-                <div class="field"><label>Matrícula *</label><input id="cMat" required placeholder="Ej. 5619CKS" /></div>
-                <div class="field"><label>Código VIN / Bastidor</label><input id="cVin" placeholder="Letras y números del VIN" maxlength="25" /></div>
-                <div class="field"><label>Marca *</label><input id="cMarca" required /></div>
-                <div class="field"><label>Modelo *</label><input id="cModelo" required /></div>
-                <div class="field"><label>Año</label><input id="cAno" type="number" /></div>
+                <div class="field"><label>Alias *</label><input id="cAlias" required placeholder="Ej. Coche principal" /></div>
+                <div class="field"><label>Matrícula *</label><input id="cMat" required placeholder="Ej. 0000 BBB" /></div>
+                <div class="field"><label>Código VIN / Bastidor</label><input id="cVin" placeholder="Ej. 00000000000000000" maxlength="25" /></div>
+                <div class="field"><label>Marca *</label><input id="cMarca" required placeholder="Ej. Marca" /></div>
+                <div class="field"><label>Modelo *</label><input id="cModelo" required placeholder="Ej. Modelo 0000" /></div>
+                <div class="field"><label>Año</label><input id="cAno" type="number" placeholder="0000" /></div>
                 <div class="field"><label>Combustible</label><select id="cComb"><option>Diésel</option><option>Gasolina</option><option>Híbrido</option><option>Eléctrico</option></select></div>
-                <div class="field"><label>Km actuales *</label><input id="cKm" type="number" min="0" required /></div>
+                <div class="field"><label>Km actuales *</label><input id="cKm" type="number" min="0" required placeholder="0000" /></div>
               </div>
               <div style="margin-top:10px"><button class="btn-o" type="submit">Guardar</button></div>
             </form>
@@ -214,11 +228,11 @@ textarea{min-height:64px;resize:vertical}
               </div>
               <form id="carPhotoForm">
                 <div class="g3">
-                  <div class="field"><label>Título / Pieza / Zona *</label><input id="cpTitle" required placeholder="Ej. Manguito turbo, Conector puerta, Pinchazo..." /></div>
+                  <div class="field"><label>Título / Pieza / Zona *</label><input id="cpTitle" required placeholder="Ej. Pieza 0000, Zona delantera..." /></div>
                   <div class="field"><label>Categoría</label><select id="cpCat"><option>Pieza / Avería</option><option>Mantenimiento</option><option>Ruedas</option><option>Estado general</option></select></div>
                   <div class="field"><label>Hacer foto o elegir de fotos *</label><input id="cpPhotoInp" type="file" accept="image/*" required /></div>
                 </div>
-                <div class="field" style="margin-top:8px"><label>Nota / Recordatorio</label><input id="cpNote" placeholder="Ej. Revisar holgura o pedir recambio con esta referencia..." /></div>
+                <div class="field" style="margin-top:8px"><label>Nota / Recordatorio</label><input id="cpNote" placeholder="Nota o referencia..." /></div>
                 <div class="muted" style="margin-top:6px;font-size:.76rem">Se comprime automáticamente a máx. 960 px para ahorrar memoria.</div>
                 <div style="margin-top:10px"><button class="btn-o" type="submit">Guardar foto</button></div>
               </form>
@@ -266,7 +280,7 @@ textarea{min-height:64px;resize:vertical}
               <div id="ptCard" class="panel hidden">
                 <form id="ptForm"><input type="hidden" id="ptId" />
                   <div class="g3">
-                    <div class="field"><label>Concepto *</label><input id="ptName" required /></div>
+                    <div class="field"><label>Concepto *</label><input id="ptName" required placeholder="Ej. Aceite y filtro" /></div>
                     <div class="field"><label>Intervalo cada (km) *</label><input id="ptInt" type="number" min="100" step="100" required /></div>
                     <div class="field"><label>Último cambio (km) *</label><input id="ptLast" type="number" min="0" required /></div>
                     <div class="field"><label>Fecha último cambio</label><input id="ptDate" type="date" /></div>
@@ -291,10 +305,10 @@ textarea{min-height:64px;resize:vertical}
                   <div class="field"><label>Fecha *</label><input id="lFecha" type="date" required /></div>
                   <div class="field"><label>Km reales del cambio *</label><input id="lKm" type="number" min="0" required /></div>
                   <div class="field"><label>Intervalo próximo ciclo (km)</label><input id="lInt" type="number" min="100" step="100" placeholder="Opcional (mantiene el actual)" /></div>
-                  <div class="field"><label>Taller</label><input id="lTaller" /></div>
+                  <div class="field"><label>Taller</label><input id="lTaller" placeholder="Taller / Garage" /></div>
                   <div class="field"><label>Mano de obra (EUR)</label><input id="lMano" type="number" min="0" step="0.01" value="0" /></div>
                 </div>
-                <div class="field" style="margin-top:8px"><label>Concepto *</label><input id="lDesc" required /></div>
+                <div class="field" style="margin-top:8px"><label>Concepto *</label><input id="lDesc" required placeholder="Concepto del registro" /></div>
                 <div id="brkExtra" class="g2 hidden" style="margin-top:8px">
                   <div class="field"><label>Descripción del problema</label><textarea id="lProb" placeholder="Síntomas, fallo, testigo..."></textarea></div>
                   <div class="field"><label>Cómo se ha resuelto</label><textarea id="lRes" placeholder="Reparación o pieza cambiada..."></textarea></div>
@@ -319,14 +333,14 @@ textarea{min-height:64px;resize:vertical}
                 <div class="flex" style="margin-bottom:10px"><strong id="tireFormTitle">Ruedas</strong><button id="xTireBtn" class="btn-l" style="padding:3px 8px" type="button">X</button></div>
                 <form id="tireForm"><input type="hidden" id="tId" />
                   <div class="g3">
-                    <div class="field"><label>Marca *</label><input id="tMarca" required /></div>
-                    <div class="field"><label>Modelo *</label><input id="tMod" required /></div>
-                    <div class="field"><label>Medida</label><input id="tMed" /></div>
+                    <div class="field"><label>Marca *</label><input id="tMarca" required placeholder="Ej. Marca" /></div>
+                    <div class="field"><label>Modelo *</label><input id="tMod" required placeholder="Ej. Modelo 0000" /></div>
+                    <div class="field"><label>Medida</label><input id="tMed" placeholder="Ej. 000/00 R00" /></div>
                     <div class="field"><label>Fecha *</label><input id="tFec" type="date" required /></div>
                     <div class="field"><label>Km montaje *</label><input id="tKm" type="number" min="0" required /></div>
                     <div class="field"><label>Coste (EUR) *</label><input id="tCoste" type="number" min="0" step="0.01" required /></div>
                   </div>
-                  <div class="field" style="margin-top:8px"><label>Notas / Rotaciones / Pinchazos / Incidencias</label><textarea id="tNotas" placeholder="Ej. Rotadas a los 15.000 km, pinchazo trasera derecha reparado..."></textarea></div>
+                  <div class="field" style="margin-top:8px"><label>Notas / Rotaciones / Pinchazos / Incidencias</label><textarea id="tNotas" placeholder="Rotaciones, presiones, incidencias..."></textarea></div>
                   <div class="acts" style="margin-top:10px"><button class="btn-o" type="submit">Guardar cambios</button><button id="cancelTireBtn" class="btn-l" type="button">Cancelar</button></div>
                 </form>
               </div>
@@ -341,12 +355,12 @@ textarea{min-height:64px;resize:vertical}
               <div id="alertCard" class="panel hidden">
                 <form id="alertForm"><input type="hidden" id="aId" />
                   <div class="g3">
-                    <div class="field"><label>Concepto *</label><input id="aNom" required /></div>
+                    <div class="field"><label>Concepto *</label><input id="aNom" required placeholder="Ej. ITV / Seguro" /></div>
                     <div class="field"><label>Tipo</label><select id="aTip"><option>Seguro</option><option>ITV</option><option>Impuesto</option><option>Otro</option></select></div>
                     <div class="field"><label>Fecha vencimiento</label><input id="aFec" type="date" /></div>
-                    <div class="field"><label>Km límite</label><input id="aKm" type="number" min="0" /></div>
-                    <div class="field"><label>Coste (EUR)</label><input id="aCos" type="number" min="0" step="0.01" /></div>
-                    <div class="field"><label>Nota</label><input id="aNot" /></div>
+                    <div class="field"><label>Km límite</label><input id="aKm" type="number" min="0" placeholder="0000" /></div>
+                    <div class="field"><label>Coste (EUR)</label><input id="aCos" type="number" min="0" step="0.01" placeholder="0" /></div>
+                    <div class="field"><label>Nota</label><input id="aNot" placeholder="Opcional" /></div>
                   </div>
                   <div class="acts" style="margin-top:10px"><button class="btn-o" type="submit">Guardar</button><button id="cancelAlertBtn" class="btn-l" type="button">Cancelar</button></div>
                 </form>
@@ -368,7 +382,7 @@ textarea{min-height:64px;resize:vertical}
                 <div class="flex" style="margin-bottom:10px"><strong>Nuevo documento con foto</strong><button id="cancelDocBtn" class="btn-l" type="button">Cancelar</button></div>
                 <form id="docForm">
                   <div class="g3">
-                    <div class="field"><label>Nombre del documento *</label><input id="dTitle" required placeholder="Ej. Ficha técnica, Póliza seguro..." /></div>
+                    <div class="field"><label>Nombre del documento *</label><input id="dTitle" required placeholder="Ej. Ficha técnica, Seguro..." /></div>
                     <div class="field"><label>Tipo</label><select id="dType"><option>Ficha técnica</option><option>Seguro</option><option>ITV</option><option>Otro</option></select></div>
                     <div class="field"><label>Hacer foto o elegir de fotos *</label><input id="dPhotoInp" type="file" accept="image/*" required /></div>
                   </div>
@@ -422,6 +436,20 @@ textarea{min-height:64px;resize:vertical}
   </div>
 </div>
 
+<div id="infoModalBg" class="modal-bg hidden">
+  <div class="modal">
+    <div class="flex"><strong id="infoModalTitle" style="font-size:1.1rem">Aviso</strong><button id="xInfoModal" class="btn-l" style="padding:3px 8px" type="button">X</button></div>
+    <div class="km-box">
+      <div id="infoModalTag" class="lbl">INFORMACIÓN</div>
+      <div id="infoModalMain" style="font-size:1.1rem;font-weight:700;margin-top:4px;color:var(--tx)"></div>
+    </div>
+    <div id="infoModalSub" class="muted" style="margin-top:6px;font-size:.82rem"></div>
+    <div class="acts" style="justify-content:flex-end;margin-top:16px">
+      <button id="okInfoModal" class="btn-o" type="button">Entendido</button>
+    </div>
+  </div>
+</div>
+
 <div id="delModalBg" class="modal-bg hidden">
   <div class="modal">
     <div class="flex"><strong id="delModalTitle" style="font-size:1.1rem">Confirmar borrado</strong><button id="xDelModal" class="btn-l" style="padding:3px 8px" type="button">X</button></div>
@@ -452,10 +480,11 @@ textarea{min-height:64px;resize:vertical}
 
 <script>
 (function(){
-const KEY="garaje_v16", today=()=>new Date().toISOString().slice(0,10);
+const KEY="garaje_v16", TRIAL_DAYS=15, MAX_CARS_TRIAL=2;
+const today=()=>new Date().toISOString().slice(0,10);
 function addMo(iso,m){const b=iso?new Date(iso+"T00:00:00"):new Date();const d=new Date(b.getFullYear(),b.getMonth()+m,b.getDate());return d.toISOString().slice(0,10);}
-function defDb(){return{activeId:"",cars:[]};}
-let db=(()=>{try{const r=JSON.parse(localStorage.getItem(KEY));return r&&Array.isArray(r.cars)?r:defDb();}catch(e){return defDb();}})();
+function defDb(){return{activeId:"",cars:[],trialStart:today(),trialNoticeShown:false};}
+let db=(()=>{try{const r=JSON.parse(localStorage.getItem(KEY));if(r&&Array.isArray(r.cars)){if(!r.trialStart)r.trialStart=today();return r;}return defDb();}catch(e){return defDb();}})();
 const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const eur=n=>Number(n||0).toLocaleString("es-ES",{maximumFractionDigits:2})+" EUR";
 const kmf=n=>Number(n||0).toLocaleString("es-ES")+" km";
@@ -463,6 +492,102 @@ const fdt=i=>i?new Date(i+"T00:00:00").toLocaleDateString("es-ES",{day:"numeric"
 const kbFromDataUrl=u=>{if(!u)return"";const b=Math.round((u.length*3)/4);return b>=1024*1024?(b/(1024*1024)).toFixed(1)+" MB":Math.max(1,Math.round(b/1024))+" KB";};
 const car=()=>db.cars.find(x=>x.id===db.activeId)||db.cars[0]||null;
 const toast=m=>{const el=document.getElementById("toast");el.textContent=m;el.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove("show"),1800);};
+const normId=v=>String(v||"").toUpperCase().replace(/[\s-]/g,"").trim();
+
+let infoModalOnClose=null;
+function showNoticeModal({title="Aviso",tag="INFORMACIÓN",main="",sub="",btnText="Entendido",onClose=null}){
+  document.getElementById("infoModalTitle").textContent=title;
+  document.getElementById("infoModalTag").textContent=tag;
+  document.getElementById("infoModalMain").textContent=main;
+  document.getElementById("infoModalSub").textContent=sub;
+  document.getElementById("okInfoModal").textContent=btnText;
+  infoModalOnClose=onClose;
+  document.getElementById("infoModalBg").classList.remove("hidden");
+  document.getElementById("okInfoModal").focus();
+}
+function closeInfoModal(){
+  document.getElementById("infoModalBg").classList.add("hidden");
+  const fn=infoModalOnClose;
+  infoModalOnClose=null;
+  if(typeof fn==="function")fn();
+}
+document.getElementById("xInfoModal").addEventListener("click",closeInfoModal);
+document.getElementById("okInfoModal").addEventListener("click",closeInfoModal);
+document.getElementById("infoModalBg").addEventListener("click",e=>{if(e.target.id==="infoModalBg")closeInfoModal();});
+
+function evalTrialFromStart(startIso){
+  const safeStart=startIso||today();
+  const startMs=new Date(safeStart+"T00:00:00").getTime();
+  const now=new Date();now.setHours(0,0,0,0);
+  const elapsedDays=Math.max(0,Math.floor((now.getTime()-startMs)/864e5));
+  const daysLeft=Math.max(0,TRIAL_DAYS-elapsedDays);
+  return{elapsedDays,daysLeft,expired:elapsedDays>TRIAL_DAYS};
+}
+function getTrialInfo(){return evalTrialFromStart(db.trialStart||today());}
+
+function showTrialExpiredModal(actionText="añadir elementos nuevos"){
+  showNoticeModal({
+    title:"Periodo de prueba finalizado",
+    tag:"VERSIÓN DE PRUEBA",
+    main:"Han pasado los "+TRIAL_DAYS+" días de prueba",
+    sub:"Puedes seguir consultando lo ya guardado, pero está bloqueado "+actionText+". Activa la versión completa para continuar."
+  });
+}
+
+function canAddNewItem(){
+  if(getTrialInfo().expired){
+    showTrialExpiredModal("añadir elementos nuevos");
+    return false;
+  }
+  return true;
+}
+
+function canUseBackupTools(){
+  if(getTrialInfo().expired){
+    showTrialExpiredModal("copiar o restaurar datos");
+    return false;
+  }
+  return true;
+}
+
+function canAddNewCar(){
+  if(!canAddNewItem())return false;
+  if(db.cars.length>=MAX_CARS_TRIAL){
+    showNoticeModal({
+      title:"Límite alcanzado",
+      tag:"VERSIÓN DE PRUEBA",
+      main:"Máximo "+MAX_CARS_TRIAL+" vehículos",
+      sub:"Esta versión de prueba permite registrar un máximo de "+MAX_CARS_TRIAL+" vehículos durante "+TRIAL_DAYS+" días."
+    });
+    return false;
+  }
+  return true;
+}
+
+function findDuplicateCar(mat,vin,ignoreId=""){
+  const nMat=normId(mat);
+  const nVin=normId(vin);
+  for(const c of db.cars){
+    if(ignoreId&&c.id===ignoreId)continue;
+    if(nMat&&normId(c.matricula)===nMat){
+      return{
+        title:"Matrícula duplicada",
+        tag:"DATO REPETIDO",
+        main:mat,
+        sub:"Ya existe un vehículo registrado con esa matrícula ("+(c.alias||c.matricula)+"). Cada coche debe tener su propia matrícula."
+      };
+    }
+    if(nVin&&normId(c.vin)===nVin){
+      return{
+        title:"Bastidor / VIN duplicado",
+        tag:"DATO REPETIDO",
+        main:vin,
+        sub:"Ya existe un vehículo registrado con ese número de bastidor ("+(c.alias||c.vin)+"). Cada coche debe tener su propio VIN."
+      };
+    }
+  }
+  return null;
+}
 
 let pendingDelete=null;
 function syncDelModalStep(){
@@ -502,7 +627,18 @@ document.getElementById("confirmDelModalBtn").addEventListener("click",()=>{
   }
 });
 
-function save(){try{localStorage.setItem(KEY,JSON.stringify(db));}catch(e){alert("No se pudo guardar (posible falta de espacio en el navegador).");}render();}
+function save(){
+  try{localStorage.setItem(KEY,JSON.stringify(db));}
+  catch(e){
+    showNoticeModal({
+      title:"Error al guardar",
+      tag:"ALMACENAMIENTO",
+      main:"No se pudieron guardar los datos",
+      sub:"Posible falta de espacio en el almacenamiento local del dispositivo."
+    });
+  }
+  render();
+}
 
 function openPhotoModal(title,sub,src,note=""){
   document.getElementById("photoModalTitle").textContent=title||"Foto";
@@ -624,6 +760,7 @@ function getCurrentData(pt,c){
 
 function openLog(tipo,item=null,pt=null,mode="history"){
   const c=car();if(!c)return;
+  if(!item&&!canAddNewItem())return;
   setSec("coches");setSub(tipo==="Avería"?"averias":"mantenimiento");
   document.getElementById("logForm").reset();
   const matchedPt=pt||(item?findMatchedPlanTask(c,item.planTaskId,item.desc):null);
@@ -654,6 +791,7 @@ function openLog(tipo,item=null,pt=null,mode="history"){
 }
 
 function completeCurrentMaintenance(pt,c){
+  if(!canAddNewItem())return;
   const cur=getCurrentData(pt,c);
   const archived={
     id:"l"+Date.now()+"_"+Math.random().toString(36).slice(2,6),
@@ -710,6 +848,7 @@ function logCard(l,c){
 
 function openTireForm(t=null){
   const c=car();if(!c)return;
+  if(!t&&!canAddNewItem())return;
   document.getElementById("tireForm").reset();
   document.getElementById("tId").value=t?t.id:"";
   document.getElementById("tireFormTitle").textContent=t?("Editar ruedas: "+t.marca+" "+t.modelo):"Añadir ruedas";
@@ -909,6 +1048,14 @@ function renderMaterialsSection(){
 }
 
 function render(){
+  const ti=getTrialInfo();
+  const stEl=document.getElementById("trialStatusTxt");
+  if(stEl){
+    stEl.textContent=ti.expired
+      ?("Prueba caducada ("+TRIAL_DAYS+" días) · Solo consulta · Máx. "+MAX_CARS_TRIAL+" vehículos")
+      :("Prueba: "+ti.daysLeft+" día(s) restantes · Máx. "+MAX_CARS_TRIAL+" vehículos");
+  }
+
   const allAtt=[];let brkTot=0;const allMaints=[];
   db.cars.forEach(c=>{activeAlerts(c).forEach(x=>allAtt.push(x));(c.logs||[]).forEach(l=>l.tipo==="Avería"?brkTot++:allMaints.push({l,c}));});
   document.getElementById("pCars").textContent=db.cars.length;
@@ -1083,6 +1230,7 @@ document.getElementById("photoModalBg").addEventListener("click",e=>{if(e.target
 
 const openCarPhotoForm=()=>{
   if(!car())return;
+  if(!canAddNewItem())return;
   setSec("coches");setSub("resumen");
   document.getElementById("carPhotoForm").reset();
   const fc=document.getElementById("carPhotoFormCard");
@@ -1095,9 +1243,13 @@ document.getElementById("qCarPhotoBtn").addEventListener("click",openCarPhotoFor
 document.getElementById("cancelCarPhotoBtn").addEventListener("click",()=>document.getElementById("carPhotoFormCard").classList.add("hidden"));
 document.getElementById("carPhotoForm").addEventListener("submit",e=>{
   e.preventDefault();
+  if(!canAddNewItem())return;
   const c=car();if(!c)return;
   const f=document.getElementById("cpPhotoInp").files&&document.getElementById("cpPhotoInp").files[0];
-  if(!f){alert("Selecciona o haz una foto.");return;}
+  if(!f){
+    showNoticeModal({title:"Falta la foto",tag:"CAMPO OBLIGATORIO",main:"Selecciona o haz una foto",sub:"Debes elegir una imagen antes de guardar."});
+    return;
+  }
   const title=document.getElementById("cpTitle").value.trim();
   const cat=document.getElementById("cpCat").value;
   const note=document.getElementById("cpNote").value.trim();
@@ -1109,12 +1261,20 @@ document.getElementById("carPhotoForm").addEventListener("submit",e=>{
   });
 });
 
-document.getElementById("btnPanelAdd").addEventListener("click",()=>{document.getElementById("cId").value="";document.getElementById("carForm").reset();setSec("coches");document.getElementById("carFormCard").classList.remove("hidden");});
+function startNewCarForm(fromPanel=false){
+  if(!canAddNewCar())return;
+  document.getElementById("cId").value="";
+  document.getElementById("carForm").reset();
+  if(fromPanel)setSec("coches");
+  document.getElementById("carFormCard").classList.remove("hidden");
+}
+
+document.getElementById("btnPanelAdd").addEventListener("click",()=>startNewCarForm(true));
 document.getElementById("goAlertsLink").addEventListener("click",()=>setSec("avisos"));
 document.getElementById("goCarsLink").addEventListener("click",()=>setSec("coches"));
 document.getElementById("backPanelBtn").addEventListener("click",()=>setSec("panel"));
 document.getElementById("carSel").addEventListener("change",e=>{db.activeId=e.target.value;save();});
-document.getElementById("addCarBtn").addEventListener("click",()=>{document.getElementById("cId").value="";document.getElementById("carForm").reset();document.getElementById("carFormCard").classList.remove("hidden");});
+document.getElementById("addCarBtn").addEventListener("click",()=>startNewCarForm(false));
 document.getElementById("editCarBtn").addEventListener("click",()=>{const c=car();if(!c)return;document.getElementById("cId").value=c.id;document.getElementById("cAlias").value=c.alias;document.getElementById("cMarca").value=c.marca;document.getElementById("cModelo").value=c.modelo;document.getElementById("cMat").value=c.matricula||"";document.getElementById("cVin").value=c.vin||"";document.getElementById("cAno").value=c.ano||"";document.getElementById("cComb").value=c.combustible||"Diésel";document.getElementById("cKm").value=c.km||0;document.getElementById("carFormCard").classList.remove("hidden");});
 document.getElementById("cancelCarBtn").addEventListener("click",()=>document.getElementById("carFormCard").classList.add("hidden"));
 document.getElementById("delCarBtn").addEventListener("click",()=>{
@@ -1127,10 +1287,26 @@ document.getElementById("delCarBtn").addEventListener("click",()=>{
 });
 document.getElementById("carForm").addEventListener("submit",e=>{
   e.preventDefault();
-  const mat=document.getElementById("cMat").value.trim().toUpperCase();
-  if(!mat){alert("La matrícula es obligatoria.");document.getElementById("cMat").focus();return;}
   const id=document.getElementById("cId").value;
-  const d={alias:document.getElementById("cAlias").value.trim(),matricula:mat,vin:document.getElementById("cVin").value.trim().toUpperCase(),marca:document.getElementById("cMarca").value.trim(),modelo:document.getElementById("cModelo").value.trim(),ano:Number(document.getElementById("cAno").value)||"",combustible:document.getElementById("cComb").value,km:Number(document.getElementById("cKm").value)||0};
+  if(!id&&!canAddNewCar())return;
+  const mat=document.getElementById("cMat").value.trim().toUpperCase();
+  const vin=document.getElementById("cVin").value.trim().toUpperCase();
+  if(!mat){
+    showNoticeModal({
+      title:"Matrícula obligatoria",
+      tag:"CAMPO REQUERIDO",
+      main:"Introduce la matrícula del vehículo",
+      sub:"Es necesario indicar una matrícula única para identificar el coche.",
+      onClose:()=>document.getElementById("cMat").focus()
+    });
+    return;
+  }
+  const dup=findDuplicateCar(mat,vin,id);
+  if(dup){
+    showNoticeModal(dup);
+    return;
+  }
+  const d={alias:document.getElementById("cAlias").value.trim(),matricula:mat,vin,marca:document.getElementById("cMarca").value.trim(),modelo:document.getElementById("cModelo").value.trim(),ano:Number(document.getElementById("cAno").value)||"",combustible:document.getElementById("cComb").value,km:Number(document.getElementById("cKm").value)||0};
   if(id){const i=db.cars.findIndex(x=>x.id===id);if(i>-1)db.cars[i]=Object.assign({},db.cars[i],d);}
   else{const nid="c"+Date.now();db.cars.push(Object.assign({id:nid,docsList:[],carPhotos:[],avisos:[],hechos:[],planTasks:[],logs:[],tires:[]},d));db.activeId=nid;}
   document.getElementById("carFormCard").classList.add("hidden");save();toast("Vehículo guardado");
@@ -1138,6 +1314,7 @@ document.getElementById("carForm").addEventListener("submit",e=>{
 
 document.getElementById("addDocBtn").addEventListener("click",()=>{
   if(!car())return;
+  if(!canAddNewItem())return;
   document.getElementById("docForm").reset();
   const fc=document.getElementById("docFormCard");
   fc.classList.remove("hidden");
@@ -1146,9 +1323,13 @@ document.getElementById("addDocBtn").addEventListener("click",()=>{
 document.getElementById("cancelDocBtn").addEventListener("click",()=>document.getElementById("docFormCard").classList.add("hidden"));
 document.getElementById("docForm").addEventListener("submit",e=>{
   e.preventDefault();
+  if(!canAddNewItem())return;
   const c=car();if(!c)return;
   const f=document.getElementById("dPhotoInp").files&&document.getElementById("dPhotoInp").files[0];
-  if(!f){alert("Selecciona o haz una foto del documento.");return;}
+  if(!f){
+    showNoticeModal({title:"Falta la foto",tag:"CAMPO OBLIGATORIO",main:"Selecciona o haz una foto del documento",sub:"Debes elegir una imagen antes de guardar."});
+    return;
+  }
   const title=document.getElementById("dTitle").value.trim();
   const type=document.getElementById("dType").value;
   const note=document.getElementById("dNote").value.trim();
@@ -1178,6 +1359,7 @@ document.getElementById("logForm").addEventListener("submit",e=>{
   e.preventDefault();
   const c=car();if(!c)return;
   const id=document.getElementById("lId").value,ptId=document.getElementById("lPtId").value,mode=document.getElementById("lMode").value,tipo=document.getElementById("lTipo").value,fecha=document.getElementById("lFecha").value,kmv=Number(document.getElementById("lKm").value)||0,desc=document.getElementById("lDesc").value.trim();
+  if(!id&&mode!=="current"&&!canAddNewItem())return;
   const rawInt=document.getElementById("lInt").value;
   const newInt=rawInt!==""?Math.max(100,Number(rawInt)||0):null;
   const parts=readParts();
@@ -1210,11 +1392,13 @@ document.getElementById("logForm").addEventListener("submit",e=>{
   document.getElementById("logCard").classList.add("hidden");save();toast("Guardado");
 });
 
-document.getElementById("addPtBtn").addEventListener("click",()=>{const c=car();if(!c)return;document.getElementById("ptId").value="";document.getElementById("ptForm").reset();document.getElementById("ptInt").value=15000;document.getElementById("ptLast").value=c.km||0;document.getElementById("ptDate").value=today();document.getElementById("ptCard").classList.remove("hidden");});
+document.getElementById("addPtBtn").addEventListener("click",()=>{const c=car();if(!c)return;if(!canAddNewItem())return;document.getElementById("ptId").value="";document.getElementById("ptForm").reset();document.getElementById("ptInt").value=15000;document.getElementById("ptLast").value=c.km||0;document.getElementById("ptDate").value=today();document.getElementById("ptCard").classList.remove("hidden");});
 document.getElementById("cancelPtBtn").addEventListener("click",()=>document.getElementById("ptCard").classList.add("hidden"));
 document.getElementById("ptForm").addEventListener("submit",e=>{
   e.preventDefault();const c=car();if(!c)return;
-  const id=document.getElementById("ptId").value,d={nombre:document.getElementById("ptName").value.trim(),intervaloKm:Math.max(100,Number(document.getElementById("ptInt").value)||10000),ultimoKm:Number(document.getElementById("ptLast").value)||0,ultimaFecha:document.getElementById("ptDate").value};
+  const id=document.getElementById("ptId").value;
+  if(!id&&!canAddNewItem())return;
+  const d={nombre:document.getElementById("ptName").value.trim(),intervaloKm:Math.max(100,Number(document.getElementById("ptInt").value)||10000),ultimoKm:Number(document.getElementById("ptLast").value)||0,ultimaFecha:document.getElementById("ptDate").value};
   if(id){const i=c.planTasks.findIndex(x=>x.id===id);if(i>-1)c.planTasks[i]=Object.assign({},c.planTasks[i],d);}else c.planTasks.push(Object.assign({id:"p"+Date.now(),current:{fecha:d.ultimaFecha||today(),km:d.ultimoKm||c.km||0,taller:"",manoObra:0,parts:[]}},d));
   document.getElementById("ptCard").classList.add("hidden");save();toast("Tarea guardada");
 });
@@ -1224,37 +1408,68 @@ document.getElementById("cancelTireBtn").addEventListener("click",()=>document.g
 document.getElementById("xTireBtn").addEventListener("click",()=>document.getElementById("tireCard").classList.add("hidden"));
 document.getElementById("tireForm").addEventListener("submit",e=>{
   e.preventDefault();const c=car();if(!c)return;
-  const id=document.getElementById("tId").value,d={marca:document.getElementById("tMarca").value.trim(),modelo:document.getElementById("tMod").value.trim(),medida:document.getElementById("tMed").value.trim(),fecha:document.getElementById("tFec").value,kmMont:Number(document.getElementById("tKm").value)||0,coste:Number(document.getElementById("tCoste").value)||0,notas:document.getElementById("tNotas").value.trim(),activa:true};
+  const id=document.getElementById("tId").value;
+  if(!id&&!canAddNewItem())return;
+  const d={marca:document.getElementById("tMarca").value.trim(),modelo:document.getElementById("tMod").value.trim(),medida:document.getElementById("tMed").value.trim(),fecha:document.getElementById("tFec").value,kmMont:Number(document.getElementById("tKm").value)||0,coste:Number(document.getElementById("tCoste").value)||0,notas:document.getElementById("tNotas").value.trim(),activa:true};
   if(!Array.isArray(c.tires))c.tires=[];
   if(id){const i=c.tires.findIndex(x=>x.id===id);if(i>-1)c.tires[i]=Object.assign({},c.tires[i],d);}else c.tires.push(Object.assign({id:"t"+Date.now()},d));
   document.getElementById("tireCard").classList.add("hidden");save();toast(id?"Cambios en ruedas guardados":"Ruedas guardadas");
 });
 
-document.getElementById("addAlertBtn").addEventListener("click",()=>{if(!car())return;document.getElementById("aId").value="";document.getElementById("alertForm").reset();document.getElementById("alertCard").classList.remove("hidden");});
+document.getElementById("addAlertBtn").addEventListener("click",()=>{if(!car())return;if(!canAddNewItem())return;document.getElementById("aId").value="";document.getElementById("alertForm").reset();document.getElementById("alertCard").classList.remove("hidden");});
 document.getElementById("cancelAlertBtn").addEventListener("click",()=>document.getElementById("alertCard").classList.add("hidden"));
 document.getElementById("alertForm").addEventListener("submit",e=>{
   e.preventDefault();const c=car();if(!c)return;
-  const id=document.getElementById("aId").value,rk=document.getElementById("aKm").value;
+  const id=document.getElementById("aId").value;
+  if(!id&&!canAddNewItem())return;
+  const rk=document.getElementById("aKm").value;
   const d={nombre:document.getElementById("aNom").value.trim(),tipo:document.getElementById("aTip").value,fecha:document.getElementById("aFec").value,kmLimite:rk!==""?Number(rk):"",coste:Number(document.getElementById("aCos").value)||0,nota:document.getElementById("aNot").value.trim()};
   if(id){const i=c.avisos.findIndex(x=>x.id===id);if(i>-1)c.avisos[i]=Object.assign({},c.avisos[i],d);}else c.avisos.push(Object.assign({id:"a"+Date.now()},d));
   document.getElementById("alertCard").classList.add("hidden");save();toast("Aviso guardado");
 });
 
 function exportJson(){
+  if(!canUseBackupTools())return;
   const a=document.createElement("a");
   a.href=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:"application/json"}));
   a.download="garaje-"+today()+".json";
   a.click();
+  toast("Copia descargada");
+}
+function triggerRestorePicker(inputId){
+  if(!canUseBackupTools())return;
+  const inp=document.getElementById(inputId);
+  if(inp){inp.value="";inp.click();}
 }
 function handleImportFile(file,inputEl){
   if(!file)return;
+  if(!canUseBackupTools()){
+    if(inputEl)inputEl.value="";
+    return;
+  }
   const r=new FileReader();
   r.onload=()=>{
     try{
       const p=JSON.parse(r.result);
       if(!Array.isArray(p.cars))throw 0;
-      db=p;save();toast("Importado");
-    }catch(_){alert("JSON no válido");}
+      const effStart=p.trialStart||db.trialStart||today();
+      if(evalTrialFromStart(effStart).expired){
+        db.trialStart=effStart;
+        save();
+        showTrialExpiredModal("restaurar esta copia");
+      }else{
+        p.trialStart=effStart;
+        if(typeof p.trialNoticeShown!=="boolean")p.trialNoticeShown=Boolean(db.trialNoticeShown);
+        db=p;save();toast("Restaurado");
+      }
+    }catch(_){
+      showNoticeModal({
+        title:"Archivo no válido",
+        tag:"ERROR AL RESTAURAR",
+        main:"No se pudo leer la copia",
+        sub:"Selecciona un archivo de copia válido generado previamente por Garaje (.json)."
+      });
+    }
     if(inputEl)inputEl.value="";
   };
   r.readAsText(file);
@@ -1262,14 +1477,31 @@ function handleImportFile(file,inputEl){
 
 document.getElementById("btnExp").addEventListener("click",exportJson);
 document.getElementById("btnExpTop").addEventListener("click",exportJson);
+document.getElementById("btnExpMob").addEventListener("click",exportJson);
+document.getElementById("btnImpSide").addEventListener("click",()=>triggerRestorePicker("impInp"));
+document.getElementById("btnImpTop").addEventListener("click",()=>triggerRestorePicker("impInpTop"));
+document.getElementById("btnImpMob").addEventListener("click",()=>triggerRestorePicker("impInpMob"));
 document.getElementById("impInp").addEventListener("change",e=>handleImportFile(e.target.files[0],e.target));
 document.getElementById("impInpTop").addEventListener("change",e=>handleImportFile(e.target.files[0],e.target));
+document.getElementById("impInpMob").addEventListener("change",e=>handleImportFile(e.target.files[0],e.target));
 
 if(window.innerWidth<=600){
   document.getElementById("vpStage").classList.remove("vp-tablet","vp-mobile");
 }
 
-render();
+save();
+
+if(!db.trialNoticeShown){
+  db.trialNoticeShown=true;
+  try{localStorage.setItem(KEY,JSON.stringify(db));}catch(_){}
+  showNoticeModal({
+    title:"Versión de prueba",
+    tag:"INFORMACIÓN INICIAL",
+    main:"Máximo "+MAX_CARS_TRIAL+" vehículos y "+TRIAL_DAYS+" días",
+    sub:"Estás utilizando una versión de prueba con un límite de "+MAX_CARS_TRIAL+" vehículos durante "+TRIAL_DAYS+" días.",
+    btnText:"Comenzar"
+  });
+}
 })();
 </script>
 </body>
