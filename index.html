@@ -320,12 +320,10 @@ textarea{min-height:64px;resize:vertical}
 
             <div id="logCard" class="panel hidden">
               <div class="flex" style="margin-bottom:10px"><strong id="logTitle">Registro</strong><button id="closeLogBtn" class="btn-l" type="button">Cerrar</button></div>
-              <form id="logForm"><input type="hidden" id="lId" /><input type="hidden" id="lPtId" /><input type="hidden" id="lMode" value="history" />
+              <form id="logForm"><input type="hidden" id="lId" /><input type="hidden" id="lPtId" /><input type="hidden" id="lMode" value="history" /><input type="hidden" id="lTipo" value="Mantenimiento" />
                 <div class="g3">
-                  <div class="field"><label>Tipo</label><select id="lTipo"><option value="Mantenimiento">Mantenimiento</option><option value="Avería">Avería</option></select></div>
                   <div class="field"><label>Fecha *</label><input id="lFecha" type="date" required /></div>
                   <div class="field"><label>Km reales del cambio *</label><input id="lKm" type="number" min="0" required /></div>
-                  <div class="field"><label>Intervalo próximo ciclo (km)</label><input id="lInt" type="number" min="100" step="100" placeholder="Opcional (mantiene el actual)" /></div>
                   <div class="field"><label>Taller</label><input id="lTaller" placeholder="Taller / Garage" /></div>
                   <div class="field"><label>Mano de obra (EUR)</label><input id="lMano" type="number" min="0" step="0.01" value="0" /></div>
                 </div>
@@ -790,16 +788,16 @@ function getCurrentData(pt,c){
 function openLog(tipo,item=null,pt=null,mode="history"){
   const c=car();if(!c)return;
   if(!item&&!canAddNewItem())return;
-  setSec("coches");setSub(tipo==="Avería"?"averias":"mantenimiento");
+  const resolvedTipo=(item&&item.tipo)||tipo||"Mantenimiento";
+  setSec("coches");setSub(resolvedTipo==="Avería"?"averias":"mantenimiento");
   document.getElementById("logForm").reset();
-  const matchedPt=pt||(item?findMatchedPlanTask(c,item.planTaskId,item.desc):null);
+  const matchedPt=resolvedTipo==="Mantenimiento"?(pt||(item?findMatchedPlanTask(c,item.planTaskId,item.desc):null)):null;
   document.getElementById("lMode").value=mode;
   document.getElementById("lId").value=(mode==="history"&&item&&item.id)?item.id:"";
   document.getElementById("lPtId").value=matchedPt?matchedPt.id:(item?item.planTaskId||"":"");
-  document.getElementById("lTipo").value=item?item.tipo:tipo;
+  document.getElementById("lTipo").value=resolvedTipo;
   document.getElementById("lFecha").value=item?item.fecha:today();
   document.getElementById("lKm").value=item?item.km:(c.km||0);
-  document.getElementById("lInt").value=matchedPt?matchedPt.intervaloKm:"";
   document.getElementById("lTaller").value=item?item.taller||"":"";
   document.getElementById("lMano").value=item?item.manoObra||0:0;
   document.getElementById("lDesc").value=item?item.desc:(pt?pt.nombre:"");
@@ -807,11 +805,11 @@ function openLog(tipo,item=null,pt=null,mode="history"){
   document.getElementById("lRes").value=item?item.resolucion||"":"";
   document.getElementById("logTitle").textContent=mode==="current"
     ?("Mantenimiento en curso: "+(matchedPt?matchedPt.nombre:(item?item.desc:"")))
-    :(item?"Editar registro":"Nuevo registro");
+    :(item?"Editar "+(resolvedTipo==="Avería"?"avería":"mantenimiento"):(resolvedTipo==="Avería"?"Nueva avería":"Nuevo mantenimiento"));
   document.getElementById("logSubmitBtn").textContent=mode==="current"
     ?"Guardar mantenimiento en curso"
     :"Guardar";
-  document.getElementById("brkExtra").classList.toggle("hidden",document.getElementById("lTipo").value!=="Avería");
+  document.getElementById("brkExtra").classList.toggle("hidden",resolvedTipo!=="Avería");
   document.getElementById("partsBox").innerHTML="";
   const partsToShow=(item&&Array.isArray(item.parts)&&item.parts.length)?item.parts:[{}];
   partsToShow.forEach(p=>addPart(Object.assign({},p)));
@@ -1484,7 +1482,6 @@ document.getElementById("openMaint2").addEventListener("click",()=>openLog("Mant
 document.getElementById("qBreakBtn").addEventListener("click",()=>openLog("Avería",null,null,"history"));
 document.getElementById("addBrkBtn").addEventListener("click",()=>openLog("Avería",null,null,"history"));
 document.getElementById("closeLogBtn").addEventListener("click",()=>document.getElementById("logCard").classList.add("hidden"));
-document.getElementById("lTipo").addEventListener("change",e=>document.getElementById("brkExtra").classList.toggle("hidden",e.target.value!=="Avería"));
 document.getElementById("addPartBtn").addEventListener("click",()=>addPart());
 document.getElementById("lMano").addEventListener("input",updTot);
 document.getElementById("logForm").addEventListener("submit",e=>{
@@ -1492,15 +1489,12 @@ document.getElementById("logForm").addEventListener("submit",e=>{
   const c=car();if(!c)return;
   const id=document.getElementById("lId").value,ptId=document.getElementById("lPtId").value,mode=document.getElementById("lMode").value,tipo=document.getElementById("lTipo").value,fecha=document.getElementById("lFecha").value,kmv=Number(document.getElementById("lKm").value)||0,desc=document.getElementById("lDesc").value.trim();
   if(!id&&mode!=="current"&&!canAddNewItem())return;
-  const rawInt=document.getElementById("lInt").value;
-  const newInt=rawInt!==""?Math.max(100,Number(rawInt)||0):null;
   const parts=readParts();
   const manoObra=Number(document.getElementById("lMano").value)||0;
   const taller=document.getElementById("lTaller").value.trim();
   const pt=tipo==="Mantenimiento"?findMatchedPlanTask(c,ptId,desc):null;
 
   if(mode==="current"&&pt){
-    if(newInt)pt.intervaloKm=newInt;
     pt.current={fecha,km:kmv,taller,manoObra,parts};
     if(kmv>(c.km||0))c.km=kmv;
     document.getElementById("logCard").classList.add("hidden");
@@ -1511,14 +1505,9 @@ document.getElementById("logForm").addEventListener("submit",e=>{
 
   const item={id:id||"l"+Date.now(),planTaskId:pt?pt.id:ptId,tipo,fecha,km:kmv,taller,desc,problema:tipo==="Avería"?document.getElementById("lProb").value.trim():"",resolucion:tipo==="Avería"?document.getElementById("lRes").value.trim():"",manoObra,parts};
   if(id){const i=c.logs.findIndex(x=>x.id===id);if(i>-1)c.logs[i]=item;}else c.logs.push(item);
-  if(tipo==="Mantenimiento"){
-    if(pt){
-      if(newInt)pt.intervaloKm=newInt;
-      pt.ultimoKm=kmv;
-      pt.ultimaFecha=fecha;
-    }else if(newInt&&desc){
-      c.planTasks.push({id:"p"+Date.now(),nombre:desc,intervaloKm:newInt,ultimoKm:kmv,ultimaFecha:fecha,current:{fecha,km:kmv,taller,manoObra,parts:[]}});
-    }
+  if(tipo==="Mantenimiento"&&pt){
+    pt.ultimoKm=kmv;
+    pt.ultimaFecha=fecha;
   }
   if(kmv>(c.km||0))c.km=kmv;
   document.getElementById("logCard").classList.add("hidden");save();toast("Guardado");
