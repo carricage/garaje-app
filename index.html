@@ -289,7 +289,14 @@ textarea{min-height:64px;resize:vertical}
                 </form>
               </div>
               <div id="ptList"></div>
-              <div class="sec" style="margin-top:20px"><div class="stitle">Mantenimientos anteriores</div><div id="mList"></div></div>
+              <div class="sec" style="margin-top:20px">
+                <div class="flex" style="margin-bottom:8px">
+                  <div class="stitle" style="margin:0">Mantenimientos anteriores</div>
+                  <select id="maintHistFilter" style="width:auto;min-width:210px;padding:6px 10px;font-size:.82rem;font-weight:600"></select>
+                </div>
+                <div id="mHistSummary" class="box-note hidden" style="margin-top:0;margin-bottom:10px"></div>
+                <div id="mList"></div>
+              </div>
             </div>
 
             <div id="sub-averias" class="hidden">
@@ -874,6 +881,55 @@ function logCard(l,c){
   return d;
 }
 
+function renderMaintHistory(c){
+  const sel=document.getElementById("maintHistFilter");
+  const sumBox=document.getElementById("mHistSummary");
+  const mL=document.getElementById("mList");
+  const allMaintLogs=(c.logs||[]).filter(x=>x.tipo!=="Avería");
+
+  const conceptMap=new Map();
+  (c.planTasks||[]).forEach(p=>{
+    const name=(p.nombre||"").trim();
+    if(name&&!conceptMap.has(name.toLowerCase()))conceptMap.set(name.toLowerCase(),name);
+  });
+  allMaintLogs.forEach(l=>{
+    const name=(l.desc||"").trim();
+    if(name&&!conceptMap.has(name.toLowerCase()))conceptMap.set(name.toLowerCase(),name);
+  });
+
+  const prevVal=sel.value||"__all__";
+  const optionsHtml=['<option value="__all__">Todos los conceptos ('+allMaintLogs.length+')</option>'];
+  [...conceptMap.entries()].sort((a,b)=>a[1].localeCompare(b[1],"es")).forEach(([key,label])=>{
+    const cnt=allMaintLogs.filter(l=>(l.desc||"").trim().toLowerCase()===key).length;
+    optionsHtml.push('<option value="'+esc(key)+'"'+(prevVal===key?" selected":"")+'>'+esc(label)+' ('+cnt+')</option>');
+  });
+  sel.innerHTML=optionsHtml.join("");
+  const chosen=sel.value||"__all__";
+
+  const filtered=(chosen==="__all__"
+    ?allMaintLogs
+    :allMaintLogs.filter(l=>(l.desc||"").trim().toLowerCase()===chosen)
+  ).slice().reverse();
+
+  if(chosen!=="__all__"&&filtered.length){
+    const latest=filtered[0];
+    const label=conceptMap.get(chosen)||latest.desc||"Concepto";
+    sumBox.innerHTML='<strong>'+esc(label)+':</strong> '+filtered.length+' cambio(s) registrado(s) · Último realizado el <strong>'+esc(fdt(latest.fecha)||"sin fecha")+'</strong> a los <strong>'+kmf(latest.km)+'</strong>';
+    sumBox.classList.remove("hidden");
+  }else{
+    sumBox.textContent="";
+    sumBox.classList.add("hidden");
+  }
+
+  mL.innerHTML="";
+  filtered.forEach(l=>mL.appendChild(logCard(l,c)));
+  if(!mL.children.length){
+    mL.innerHTML=chosen==="__all__"
+      ?'<div class="empty">Aún no hay mantenimientos archivados en anteriores. Pulsa <strong>Realizado</strong> en un mantenimiento en curso para guardarlo aquí.</div>'
+      :'<div class="empty">Todavía no hay mantenimientos anteriores guardados para <strong>'+esc(conceptMap.get(chosen)||"este concepto")+'</strong>.</div>';
+  }
+}
+
 function openTireForm(t=null){
   const c=car();if(!c)return;
   if(!t&&!canAddNewItem())return;
@@ -1183,8 +1239,7 @@ function render(){
     ptL.appendChild(d);
   });
 
-  const mL=document.getElementById("mList");mL.innerHTML="";(c.logs||[]).filter(x=>x.tipo!=="Avería").slice().reverse().forEach(l=>mL.appendChild(logCard(l,c)));
-  if(!mL.children.length)mL.innerHTML='<div class="empty">Aún no hay mantenimientos archivados en anteriores. Pulsa <strong>Realizado</strong> en un mantenimiento en curso para guardarlo aquí.</div>';
+  renderMaintHistory(c);
   const bL=document.getElementById("bList");bL.innerHTML="";(c.logs||[]).filter(x=>x.tipo==="Avería").slice().reverse().forEach(l=>bL.appendChild(logCard(l,c)));
 
   const tL=document.getElementById("tireList");tL.innerHTML="";
@@ -1224,6 +1279,10 @@ function render(){
   renderMaterialsSection();
 }
 
+document.getElementById("maintHistFilter").addEventListener("change",()=>{
+  const c=car();
+  if(c)renderMaintHistory(c);
+});
 document.getElementById("matCarSel").addEventListener("change",()=>renderMaterialsSection());
 document.getElementById("matSearchInp").addEventListener("input",()=>renderMaterialsSection());
 document.getElementById("matClearBtn").addEventListener("click",()=>{
