@@ -790,46 +790,74 @@ function openLog(tipo,item=null,pt=null,mode="history"){
   document.getElementById("logCard").scrollIntoView({behavior:"smooth",block:"nearest"});
 }
 
+function askCompleteKmModal(pt,c,defaultKm,defaultInt,onConfirm){
+  let bg=document.getElementById("doneKmModalBg");
+  if(!bg){
+    bg=document.createElement("div");
+    bg.id="doneKmModalBg";
+    bg.className="modal-bg";
+    bg.innerHTML='<div class="modal"><div class="flex"><strong style="font-size:1.1rem">Marcar como realizado</strong><button id="xDoneKmModal" class="btn-l" style="padding:3px 8px" type="button">X</button></div><div class="km-box"><div class="lbl">TAREA</div><div id="doneKmTaskName" style="font-size:1.05rem;font-weight:700;margin-top:2px"></div></div><form id="doneKmForm"><div class="field"><label for="doneKmInput">Kilómetros en los que se ha realizado</label><input id="doneKmInput" class="km-input" type="number" min="0" required /></div><div class="field" style="margin-top:10px"><label for="doneIntInput">Intervalo próximo cambio (km)</label><input id="doneIntInput" class="km-input" type="number" min="100" step="100" required /></div><div class="acts" style="justify-content:flex-end;margin-top:16px"><button id="cancelDoneKmModal" class="btn-l" type="button">Cancelar</button><button class="btn-o" type="submit">Confirmar</button></div></form></div>';
+    document.body.appendChild(bg);
+    const close=()=>bg.classList.add("hidden");
+    bg.querySelector("#xDoneKmModal").addEventListener("click",close);
+    bg.querySelector("#cancelDoneKmModal").addEventListener("click",close);
+    bg.addEventListener("click",e=>{if(e.target.id==="doneKmModalBg")close();});
+  }
+  bg.querySelector("#doneKmTaskName").textContent=(pt.nombre||"Mantenimiento")+" · "+c.alias;
+  bg.querySelector("#doneKmInput").value=defaultKm;
+  bg.querySelector("#doneIntInput").value=defaultInt;
+  const form=bg.querySelector("#doneKmForm");
+  form.onsubmit=e=>{
+    e.preventDefault();
+    const kmDone=Math.max(0,Number(bg.querySelector("#doneKmInput").value)||0);
+    const intNext=Math.max(100,Number(bg.querySelector("#doneIntInput").value)||defaultInt||15000);
+    bg.classList.add("hidden");
+    onConfirm(kmDone,intNext);
+  };
+  bg.classList.remove("hidden");
+  bg.querySelector("#doneKmInput").focus();
+}
+
 function completeCurrentMaintenance(pt,c){
   if(!canAddNewItem())return;
   const cur=getCurrentData(pt,c);
-  const archived={
-    id:"l"+Date.now()+"_"+Math.random().toString(36).slice(2,6),
-    planTaskId:pt.id,
-    tipo:"Mantenimiento",
-    fecha:cur.fecha||today(),
-    km:Number(cur.km??c.km)||0,
-    taller:cur.taller||"",
-    desc:pt.nombre,
-    problema:"",
-    resolucion:"",
-    manoObra:Number(cur.manoObra)||0,
-    parts:(cur.parts||[]).map(p=>Object.assign({},p))
-  };
-  if(!Array.isArray(c.logs))c.logs=[];
-  c.logs.push(archived);
-  pt.ultimoKm=archived.km;
-  pt.ultimaFecha=archived.fecha;
-  if(archived.km>(c.km||0))c.km=archived.km;
-  pt.current={
-    fecha:today(),
-    km:c.km||0,
-    taller:archived.taller||"",
-    manoObra:0,
-    parts:[]
-  };
-  save();
-  openLog("Mantenimiento",{
-    planTaskId:pt.id,
-    tipo:"Mantenimiento",
-    fecha:pt.current.fecha,
-    km:pt.current.km,
-    taller:pt.current.taller,
-    desc:pt.nombre,
-    manoObra:0,
-    parts:[]
-  },pt,"current");
-  toast("Guardado en anteriores. Nuevo mantenimiento en curso abierto.");
+  const startKm=Math.max(Number(c.km)||0,Number(cur.km)||0);
+  const startInt=Math.max(100,Number(pt.intervaloKm)||15000);
+
+  askCompleteKmModal(pt,c,startKm,startInt,(kmDone,intNext)=>{
+    const fechaDone=cur.fecha||today();
+    const archived={
+      id:"l"+Date.now()+"_"+Math.random().toString(36).slice(2,6),
+      planTaskId:pt.id,
+      tipo:"Mantenimiento",
+      fecha:fechaDone,
+      km:kmDone,
+      taller:cur.taller||"",
+      desc:pt.nombre,
+      problema:"",
+      resolucion:"",
+      manoObra:Number(cur.manoObra)||0,
+      parts:(cur.parts||[]).map(p=>Object.assign({},p))
+    };
+    if(!Array.isArray(c.logs))c.logs=[];
+    c.logs.push(archived);
+
+    pt.intervaloKm=intNext;
+    pt.ultimoKm=kmDone;
+    pt.ultimaFecha=fechaDone;
+    if(kmDone>(c.km||0))c.km=kmDone;
+
+    pt.current={
+      fecha:today(),
+      km:c.km||0,
+      taller:archived.taller||"",
+      manoObra:0,
+      parts:[]
+    };
+
+    save();
+    toast("Completado a "+kmf(kmDone)+". Próximo cambio cada "+kmf(intNext)+".");
+  });
 }
 
 function logCard(l,c){
