@@ -114,7 +114,7 @@ textarea{min-height:64px;resize:vertical}
         <button class="sbtn active" type="button" data-sec="panel">Panel</button>
         <button class="sbtn" type="button" data-sec="coches">Coches</button>
         <button class="sbtn" type="button" data-sec="avisos">Avisos</button>
-        <button class="sbtn" type="button" data-sec="materiales">Materiales</button>
+        <button class="sbtn" type="button" data-sec="materiales">Piezas utilizadas</button>
       </nav>
     </div>
     <div class="sfoot">
@@ -166,7 +166,6 @@ textarea{min-height:64px;resize:vertical}
           </div>
           <div class="sec"><div class="flex"><div class="stitle">Requiere tu atención</div><button id="goAlertsLink" class="btn-l" style="padding:4px 9px;font-size:.76rem" type="button">Ver todos</button></div><div id="pAttBox"></div></div>
           <div class="sec"><div class="flex"><div class="stitle">Tus coches</div><button id="goCarsLink" class="btn-l" style="padding:4px 9px;font-size:.76rem" type="button">Gestionar</button></div><div id="pCarsGrid" class="g2"></div></div>
-          <div class="sec"><div class="stitle">Últimos mantenimientos</div><div id="pMaintsBox"></div></div>
         </section>
 
         <section id="sec-coches" class="hidden">
@@ -333,7 +332,7 @@ textarea{min-height:64px;resize:vertical}
                   <div class="field"><label>Cómo se ha resuelto</label><textarea id="lRes" placeholder="Reparación o pieza cambiada..."></textarea></div>
                 </div>
                 <div style="margin-top:10px">
-                  <div class="flex" style="margin-bottom:6px"><label style="margin:0">Materiales / piezas utilizadas</label><button id="addPartBtn" class="btn-l" style="padding:4px 9px;font-size:.76rem" type="button">+ Pieza</button></div>
+                  <div class="flex" style="margin-bottom:6px"><label style="margin:0">Piezas utilizadas</label><button id="addPartBtn" class="btn-l" style="padding:4px 9px;font-size:.76rem" type="button">+ Pieza</button></div>
                   <div id="partsBox"></div>
                 </div>
                 <div class="flex" style="margin-top:10px"><span class="muted">Total: <strong id="lTot">0 EUR</strong></span><button id="logSubmitBtn" class="btn-o" type="submit">Guardar</button></div>
@@ -420,13 +419,14 @@ textarea{min-height:64px;resize:vertical}
         <section id="sec-materiales" class="hidden">
           <div class="head">
             <div>
-              <h1 class="h1">Materiales por vehículo</h1>
-              <div class="sub">Busca por nombre/concepto o código/referencia, edita o borra piezas y consulta cada coche por separado.</div>
+              <h1 class="h1">Piezas utilizadas</h1>
+              <div class="sub">Elige primero el concepto que quieras consultar (ej. Aceite 5W40) y filtra o busca dentro de ese concepto.</div>
             </div>
             <div class="acts">
-              <input id="matSearchInp" type="search" placeholder="Buscar concepto o código de pieza..." style="width:auto;min-width:230px;padding:7px 10px;font-size:.84rem" />
+              <select id="matConceptSel" style="width:auto;min-width:195px;padding:7px 10px;font-size:.84rem;font-weight:600"></select>
+              <input id="matSearchInp" type="search" placeholder="Buscar pieza o referencia..." style="width:auto;min-width:210px;padding:7px 10px;font-size:.84rem" />
               <button id="matClearBtn" class="btn-l" style="padding:7px 10px;font-size:.8rem" type="button">Limpiar</button>
-              <select id="matCarSel" style="width:auto;min-width:210px;padding:7px 10px;font-size:.84rem;font-weight:600"></select>
+              <select id="matCarSel" style="width:auto;min-width:200px;padding:7px 10px;font-size:.84rem;font-weight:600"></select>
             </div>
           </div>
           <div id="gMats"></div>
@@ -750,6 +750,21 @@ function setSub(t){
   ["resumen","mantenimiento","averias","ruedas","avisos","documentacion"].forEach(k=>document.getElementById("sub-"+k).classList.toggle("hidden",k!==t));
   document.querySelectorAll(".tbtn").forEach(b=>b.classList.toggle("active",b.dataset.sub===t));
   if(t!=="mantenimiento"&&t!=="averias")document.getElementById("logCard").classList.add("hidden");
+}
+
+function goToUsedParts(){
+  const c=car();
+  const matCarSel=document.getElementById("matCarSel");
+  if(c&&matCarSel&&[...matCarSel.options].some(o=>o.value===c.id)){
+    matCarSel.value=c.id;
+  }
+  setSec("materiales");
+  renderMaterialsSection();
+  const cSel=document.getElementById("matConceptSel");
+  if(cSel){
+    cSel.scrollIntoView({behavior:"smooth",block:"nearest"});
+    setTimeout(()=>cSel.focus(),80);
+  }
 }
 
 function openKmModal(){
@@ -1100,7 +1115,9 @@ function deleteMaterialEntry(m,x){
   });
 }
 
-function matchesMatQuery(m,q){
+function matchesMatQuery(m,q,conceptKey){
+  if(!conceptKey)return false;
+  if((m.concepto||"").trim().toLowerCase()!==conceptKey)return false;
   if(!q)return true;
   const hay=[
     m.p.nombre,
@@ -1112,30 +1129,59 @@ function matchesMatQuery(m,q){
   return hay.includes(q);
 }
 
+function syncMatConceptOptions(targetCars){
+  const cSel=document.getElementById("matConceptSel");
+  const conceptMap=new Map();
+  targetCars.forEach(x=>{
+    (x.planTasks||[]).forEach(p=>{
+      const name=(p.nombre||"").trim();
+      if(name&&!conceptMap.has(name.toLowerCase()))conceptMap.set(name.toLowerCase(),name);
+    });
+    getCarMaterials(x).forEach(m=>{
+      const name=(m.concepto||"").trim();
+      if(name&&!conceptMap.has(name.toLowerCase()))conceptMap.set(name.toLowerCase(),name);
+    });
+  });
+  const prevConcept=cSel.value||"";
+  const opts=['<option value="">Elige un concepto...</option>'];
+  [...conceptMap.entries()].sort((a,b)=>a[1].localeCompare(b[1],"es")).forEach(([key,label])=>{
+    opts.push('<option value="'+esc(key)+'"'+(prevConcept===key?" selected":"")+'>'+esc(label)+'</option>');
+  });
+  cSel.innerHTML=opts.join("");
+  return{key:cSel.value||"",label:conceptMap.get(cSel.value||"")||""};
+}
+
 function renderMaterialsSection(){
   const sel=document.getElementById("matCarSel");
   const box=document.getElementById("gMats");
   if(!db.cars.length){
     sel.innerHTML="";
-    box.innerHTML='<div class="empty">No hay vehículos registrados todavía. Añade uno en la sección <strong>Coches</strong> para registrar materiales.</div>';
+    document.getElementById("matConceptSel").innerHTML='<option value="">Elige un concepto...</option>';
+    box.innerHTML='<div class="empty">No hay vehículos registrados todavía. Añade uno en la sección <strong>Coches</strong> para registrar piezas utilizadas.</div>';
     return;
   }
   const curVal=sel.value||db.activeId;
   sel.innerHTML=db.cars.map(x=>'<option value="'+esc(x.id)+'"'+(x.id===curVal?" selected":"")+'>'+esc(x.alias)+' ('+esc(x.matricula||x.modelo)+')</option>').join("")
     +(db.cars.length>1?'<option value="__all__"'+(curVal==="__all__"?" selected":"")+'>Todos los vehículos (agrupados)</option>':"");
   const mode=sel.value||db.activeId;
-  const q=(document.getElementById("matSearchInp").value||"").trim().toLowerCase();
   const targetCars=mode==="__all__"?db.cars:db.cars.filter(x=>x.id===mode);
+  const concept=syncMatConceptOptions(targetCars);
+  const q=(document.getElementById("matSearchInp").value||"").trim().toLowerCase();
   box.innerHTML="";
 
+  if(!concept.key){
+    box.innerHTML='<div class="empty">'+(q?'Elige primero un concepto en el desplegable para filtrar por <strong>"'+esc(q)+'"</strong> dentro de ese concepto.':'Selecciona un concepto en el desplegable (por ejemplo, <strong>Aceite 5W40</strong>) para ver únicamente las piezas de ese concepto.')+'</div>';
+    return;
+  }
+
   targetCars.forEach(x=>{
-    const items=getCarMaterials(x).filter(m=>matchesMatQuery(m,q));
+    const items=getCarMaterials(x).filter(m=>matchesMatQuery(m,q,concept.key));
     const totalCar=items.reduce((s,m)=>s+(Number(m.p.cantidad)||0)*(Number(m.p.precio)||0),0);
     const sec=document.createElement("div");
     sec.className="sec";
-    const headHtml='<div class="flex" style="margin-bottom:8px"><div><div class="stitle" style="margin:0">'+esc(x.alias)+' <span class="muted">· '+esc([x.marca,x.modelo,x.matricula].filter(Boolean).join(" · "))+'</span></div></div><span class="pill">'+items.length+' pieza(s) · '+eur(totalCar)+'</span></div>';
+    const headHtml='<div class="flex" style="margin-bottom:8px"><div><div class="stitle" style="margin:0">'+esc(x.alias)+' <span class="pill">'+esc(concept.label||concept.key)+'</span> <span class="muted">· '+esc([x.marca,x.modelo,x.matricula].filter(Boolean).join(" · "))+'</span></div></div><span class="pill">'+items.length+' pieza(s) · '+eur(totalCar)+'</span></div>';
     if(!items.length){
-      sec.innerHTML=headHtml+'<div class="empty">'+(q?'Sin coincidencias para "'+esc(q)+'" en '+esc(x.alias)+'.':'Sin materiales registrados para '+esc(x.alias)+'.')+'</div>';
+      sec.innerHTML=headHtml+'<div class="empty">'+(q?'Sin piezas con "'+esc(q)+'" en el concepto <strong>'+esc(concept.label||concept.key)+'</strong> para '+esc(x.alias)+'.':'Sin piezas registradas para el concepto <strong>'+esc(concept.label||concept.key)+'</strong> en '+esc(x.alias)+'.')+'</div>';
     }else{
       sec.innerHTML=headHtml;
       items.forEach(m=>{
@@ -1160,8 +1206,8 @@ function render(){
       :("Prueba: "+ti.daysLeft+" día(s) restantes · Máx. "+MAX_CARS_TRIAL+" vehículos");
   }
 
-  const allAtt=[];let brkTot=0;const allMaints=[];
-  db.cars.forEach(c=>{activeAlerts(c).forEach(x=>allAtt.push(x));(c.logs||[]).forEach(l=>l.tipo==="Avería"?brkTot++:allMaints.push({l,c}));});
+  const allAtt=[];let brkTot=0;
+  db.cars.forEach(c=>{activeAlerts(c).forEach(x=>allAtt.push(x));(c.logs||[]).forEach(l=>{if(l.tipo==="Avería")brkTot++;});});
   document.getElementById("pCars").textContent=db.cars.length;
   document.getElementById("pAlerts").textContent=allAtt.length;
   document.getElementById("pBreaks").textContent=brkTot;
@@ -1178,14 +1224,6 @@ function render(){
       pGrid.appendChild(el);
     });
   }
-
-  const pM=document.getElementById("pMaintsBox");pM.innerHTML="";
-  allMaints.sort((a,b)=>(b.l.fecha||"").localeCompare(a.l.fecha||"")).slice(0,5).forEach(({l,c})=>{
-    const d=document.createElement("div");d.className="card flex card-click";
-    d.innerHTML='<div><strong>'+esc(l.desc)+'</strong><div class="muted">'+esc(c.alias)+' · '+esc(fdt(l.fecha))+'</div></div><div style="text-align:right"><strong>'+kmf(l.km)+'</strong><div class="muted">'+eur(lCost(l))+'</div></div>';
-    d.addEventListener("click",()=>{db.activeId=c.id;openLog("Mantenimiento",l,null,"history");});pM.appendChild(d);
-  });
-  if(!allMaints.length)pM.innerHTML='<div class="empty">Sin mantenimientos todavía.</div>';
 
   const c=car();
   document.getElementById("cCount").textContent=db.cars.length;
@@ -1326,9 +1364,11 @@ document.getElementById("maintHistFilter").addEventListener("change",()=>{
   const c=car();
   if(c)renderMaintHistory(c);
 });
+document.getElementById("matConceptSel").addEventListener("change",()=>renderMaterialsSection());
 document.getElementById("matCarSel").addEventListener("change",()=>renderMaterialsSection());
 document.getElementById("matSearchInp").addEventListener("input",()=>renderMaterialsSection());
 document.getElementById("matClearBtn").addEventListener("click",()=>{
+  document.getElementById("matConceptSel").value="";
   document.getElementById("matSearchInp").value="";
   renderMaterialsSection();
 });
@@ -1477,8 +1517,8 @@ document.getElementById("xKmModal").addEventListener("click",closeKm);
 document.getElementById("cancelKmModal").addEventListener("click",closeKm);
 document.getElementById("kmModalForm").addEventListener("submit",e=>{e.preventDefault();const c=car();if(!c)return;c.km=Math.max(0,Number(document.getElementById("mNewKm").value)||0);closeKm();save();toast("Kilometraje y avisos recalculados");});
 
-document.getElementById("qMaintBtn").addEventListener("click",()=>openLog("Mantenimiento",null,null,"history"));
-document.getElementById("openMaint2").addEventListener("click",()=>openLog("Mantenimiento",null,null,"history"));
+document.getElementById("qMaintBtn").addEventListener("click",goToUsedParts);
+document.getElementById("openMaint2").addEventListener("click",goToUsedParts);
 document.getElementById("qBreakBtn").addEventListener("click",()=>openLog("Avería",null,null,"history"));
 document.getElementById("addBrkBtn").addEventListener("click",()=>openLog("Avería",null,null,"history"));
 document.getElementById("closeLogBtn").addEventListener("click",()=>document.getElementById("logCard").classList.add("hidden"));
