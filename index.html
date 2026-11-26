@@ -70,7 +70,7 @@ body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:var(--bg
 .car-hero{background:linear-gradient(135deg,#fff 0%,#faf9f6 100%);border:1px solid var(--bd);border-radius:16px;padding:20px;margin-bottom:14px;box-shadow:0 2px 6px rgba(24,24,27,.05)}
 .car-hero-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:14px}
 .car-badge-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.card-click{cursor:pointer;transition:border-color .15s ease,transform .12s ease}
+.card-click{cursor:pointer;transition:border-color .15s ease,transform .12s ease;user-select:none}
 .card-click:hover{border-color:#a1a1aa;transform:translateY(-1px)}
 .lbl{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--mu)}
 .val{font-size:1.45rem;font-weight:700;margin-top:4px}
@@ -216,8 +216,16 @@ textarea{min-height:64px;resize:vertical}
               </div>
 
               <div class="g2" style="margin-top:16px;margin-bottom:0">
-                <div class="stat" style="margin-bottom:0"><div class="lbl">KILOMETRAJE</div><div id="bigKm" class="val" style="font-size:1.65rem">0 km</div></div>
-                <div class="stat" style="margin-bottom:0"><div class="lbl">AVISOS ACTIVOS</div><div id="bigAlerts" class="val" style="font-size:1.65rem">Ninguno</div></div>
+                <div id="heroKmCard" class="stat card-click" style="margin-bottom:0" title="Haz doble clic para actualizar km">
+                  <div class="lbl">KILOMETRAJE</div>
+                  <div id="bigKm" class="val" style="font-size:1.65rem">0 km</div>
+                  <div class="muted" style="font-size:.74rem;margin-top:2px">Doble clic para actualizar</div>
+                </div>
+                <div id="heroAlertsCard" class="stat card-click" style="margin-bottom:0" title="Ir a la sección de avisos">
+                  <div class="lbl">AVISOS ACTIVOS</div>
+                  <div id="bigAlerts" class="val" style="font-size:1.65rem">Ninguno</div>
+                  <div class="muted" style="font-size:.74rem;margin-top:2px">Pulsa para ver avisos</div>
+                </div>
               </div>
             </div>
 
@@ -253,8 +261,15 @@ textarea{min-height:64px;resize:vertical}
                 <button id="qBreakBtn" class="btn-l" type="button">Añadir avería</button>
               </div>
               <div class="g3" style="margin-bottom:16px">
-                <div class="stat"><div class="lbl">TAREAS PLAN</div><div id="kPlan" class="val">0</div></div>
-                <div class="stat"><div class="lbl">AVERÍAS</div><div id="kBreak" class="val">0</div></div>
+                <div id="kPendingCard" class="stat card-click" title="Pulsa para ir a las tareas pendientes">
+                  <div class="lbl">TAREAS PENDIENTES</div>
+                  <div id="kPlan" class="val">0</div>
+                  <div id="kPlanSub" class="muted" style="font-size:.74rem;margin-top:2px">Todo al día</div>
+                </div>
+                <div id="kBreakCard" class="stat card-click" title="Ver averías">
+                  <div class="lbl">AVERÍAS</div>
+                  <div id="kBreak" class="val">0</div>
+                </div>
                 <div class="stat"><div class="lbl">GASTO TOTAL</div><div id="kSpend" class="val">0 EUR</div></div>
               </div>
               <div class="sec">
@@ -266,7 +281,6 @@ textarea{min-height:64px;resize:vertical}
               </div>
               <div class="sec"><div class="stitle">Avisos</div><div id="rAlerts"></div></div>
               <div class="sec"><div class="stitle">Seguro e ITV</div><div class="sub" style="margin-bottom:8px">El seguro avisa con 2 meses de antelación para cambiar de compañía a tiempo.</div><div id="rDocs" class="g2"></div></div>
-              <div class="sec"><div class="stitle">Últimos mantenimientos</div><div id="rMaints"></div></div>
             </div>
 
             <div id="sub-mantenimiento" class="hidden">
@@ -292,7 +306,7 @@ textarea{min-height:64px;resize:vertical}
               <div class="sec" style="margin-top:20px">
                 <div class="flex" style="margin-bottom:8px">
                   <div class="stitle" style="margin:0">Mantenimientos anteriores</div>
-                  <select id="maintHistFilter" style="width:auto;min-width:210px;padding:6px 10px;font-size:.82rem;font-weight:600"></select>
+                  <select id="maintHistFilter" style="width:auto;min-width:220px;padding:6px 10px;font-size:.82rem;font-weight:600"></select>
                 </div>
                 <div id="mHistSummary" class="box-note hidden" style="margin-top:0;margin-bottom:10px"></div>
                 <div id="mList"></div>
@@ -740,6 +754,14 @@ function setSub(t){
   if(t!=="mantenimiento"&&t!=="averias")document.getElementById("logCard").classList.add("hidden");
 }
 
+function openKmModal(){
+  const c=car();if(!c)return;
+  document.getElementById("mRegKm").textContent=kmf(c.km);
+  document.getElementById("mNewKm").value=c.km||0;
+  document.getElementById("kmModalBg").classList.remove("hidden");
+  document.getElementById("mNewKm").focus();
+}
+
 function addPart(p={}){
   const d=document.createElement("div");d.className="card";d.style.background="var(--sfs)";
   d.innerHTML='<div class="g3"><div class="field"><label>Pieza</label><input class="pn" value="'+esc(p.nombre||"")+'"></div><div class="field"><label>Ref</label><input class="pr" value="'+esc(p.referencia||"")+'"></div><div class="field"><label>Dónde se compró</label><input class="pt" placeholder="Tienda, web, recambios..." value="'+esc(p.tienda||"")+'"></div><div class="field"><label>Unidades</label><input type="number" step="0.01" class="pq" value="'+(p.cantidad??1)+'"></div><div class="field"><label>Precio (EUR)</label><input type="number" step="0.01" class="pp" value="'+(p.precio??0)+'"></div></div><div class="flex" style="margin-top:6px"><span class="muted">Sub: <strong class="ps">0 EUR</strong></span><button type="button" class="btn-del rm">Quitar</button></div>';
@@ -897,21 +919,21 @@ function renderMaintHistory(c){
     if(name&&!conceptMap.has(name.toLowerCase()))conceptMap.set(name.toLowerCase(),name);
   });
 
-  const prevVal=sel.value||"__all__";
-  const optionsHtml=['<option value="__all__">Todos los conceptos ('+allMaintLogs.length+')</option>'];
+  const prevVal=sel.value||"__latest__";
+  const optionsHtml=['<option value="__latest__">Último realizado</option>'];
   [...conceptMap.entries()].sort((a,b)=>a[1].localeCompare(b[1],"es")).forEach(([key,label])=>{
     const cnt=allMaintLogs.filter(l=>(l.desc||"").trim().toLowerCase()===key).length;
     optionsHtml.push('<option value="'+esc(key)+'"'+(prevVal===key?" selected":"")+'>'+esc(label)+' ('+cnt+')</option>');
   });
   sel.innerHTML=optionsHtml.join("");
-  const chosen=sel.value||"__all__";
+  const chosen=sel.value||"__latest__";
 
-  const filtered=(chosen==="__all__"
-    ?allMaintLogs
-    :allMaintLogs.filter(l=>(l.desc||"").trim().toLowerCase()===chosen)
-  ).slice().reverse();
+  const latestSingle=allMaintLogs.length?[allMaintLogs[allMaintLogs.length-1]]:[];
+  const filtered=chosen==="__latest__"
+    ?latestSingle
+    :allMaintLogs.filter(l=>(l.desc||"").trim().toLowerCase()===chosen).slice().reverse();
 
-  if(chosen!=="__all__"&&filtered.length){
+  if(chosen!=="__latest__"&&filtered.length){
     const latest=filtered[0];
     const label=conceptMap.get(chosen)||latest.desc||"Concepto";
     sumBox.innerHTML='<strong>'+esc(label)+':</strong> '+filtered.length+' cambio(s) registrado(s) · Último realizado el <strong>'+esc(fdt(latest.fecha)||"sin fecha")+'</strong> a los <strong>'+kmf(latest.km)+'</strong>';
@@ -924,7 +946,7 @@ function renderMaintHistory(c){
   mL.innerHTML="";
   filtered.forEach(l=>mL.appendChild(logCard(l,c)));
   if(!mL.children.length){
-    mL.innerHTML=chosen==="__all__"
+    mL.innerHTML=chosen==="__latest__"
       ?'<div class="empty">Aún no hay mantenimientos archivados en anteriores. Pulsa <strong>Realizado</strong> en un mantenimiento en curso para guardarlo aquí.</div>'
       :'<div class="empty">Todavía no hay mantenimientos anteriores guardados para <strong>'+esc(conceptMap.get(chosen)||"este concepto")+'</strong>.</div>';
   }
@@ -1194,7 +1216,8 @@ function render(){
   document.getElementById("bigKm").textContent=kmf(c.km);
   const ca=activeAlerts(c);
   document.getElementById("bigAlerts").textContent=ca.length?ca.length+" activos":"Ninguno";
-  document.getElementById("kPlan").textContent=(c.planTasks||[]).length;
+  document.getElementById("kPlan").textContent=ca.length;
+  document.getElementById("kPlanSub").textContent=ca.length?"Pulsa para revisar":"Todo al día";
   document.getElementById("kBreak").textContent=(c.logs||[]).filter(x=>x.tipo==="Avería").length;
   document.getElementById("kSpend").textContent=eur(cSpend(c));
 
@@ -1203,9 +1226,6 @@ function render(){
   const seg=(c.avisos||[]).find(a=>a.tipo==="Seguro"),itv=(c.avisos||[]).find(a=>a.tipo==="ITV");
   const docCard=a=>a?'<div class="card"><div class="flex"><strong>'+esc(a.nombre)+'</strong><span class="pill">'+esc(a.tipo)+'</span></div><div class="muted" style="margin-top:4px">'+(a.fecha?"Vence "+fdt(a.fecha):"Sin fecha")+(a.nota?" · "+esc(a.nota):"")+'</div><div class="flex" style="margin-top:10px"><strong>'+(a.coste?eur(a.coste):"-")+'</strong><span class="badge b-'+evalAviso(a,c.km).lv+'">'+esc(evalAviso(a,c.km).lbl)+'</span></div></div>':'<div class="card"><div class="muted">Sin registro</div></div>';
   document.getElementById("rDocs").innerHTML=docCard(seg)+docCard(itv);
-
-  const rM=document.getElementById("rMaints");rM.innerHTML="";
-  (c.logs||[]).filter(x=>x.tipo!=="Avería").slice(-4).reverse().forEach(l=>rM.appendChild(logCard(l,c)));
 
   const ptL=document.getElementById("ptList");ptL.innerHTML="";
   (c.planTasks||[]).forEach(p=>{
@@ -1278,6 +1298,31 @@ function render(){
   renderAlertCards("gAlerts",allAtt,'<div class="empty">Sin avisos pendientes.</div>');
   renderMaterialsSection();
 }
+
+document.getElementById("heroKmCard").addEventListener("dblclick",openKmModal);
+let lastKmTap=0;
+document.getElementById("heroKmCard").addEventListener("touchend",e=>{
+  const now=Date.now();
+  if(now-lastKmTap<350){e.preventDefault();openKmModal();}
+  lastKmTap=now;
+});
+document.getElementById("heroAlertsCard").addEventListener("click",()=>setSub("avisos"));
+document.getElementById("heroAlertsCard").addEventListener("dblclick",()=>setSub("avisos"));
+
+document.getElementById("kPendingCard").addEventListener("click",()=>{
+  const c=car();if(!c)return;
+  const list=activeAlerts(c);
+  if(!list.length){
+    setSub("mantenimiento");
+    return;
+  }
+  const hasMaint=list.some(x=>x.target==="mantenimiento");
+  const hasAviso=list.some(x=>x.target==="avisos");
+  if(hasMaint)setSub("mantenimiento");
+  else if(hasAviso)setSub("avisos");
+  else setSub(list[0].target||"mantenimiento");
+});
+document.getElementById("kBreakCard").addEventListener("click",()=>setSub("averias"));
 
 document.getElementById("maintHistFilter").addEventListener("change",()=>{
   const c=car();
@@ -1429,7 +1474,7 @@ document.getElementById("docForm").addEventListener("submit",e=>{
 });
 
 const closeKm=()=>document.getElementById("kmModalBg").classList.add("hidden");
-document.getElementById("openKmModalBtn").addEventListener("click",()=>{const c=car();if(!c)return;document.getElementById("mRegKm").textContent=kmf(c.km);document.getElementById("mNewKm").value=c.km||0;document.getElementById("kmModalBg").classList.remove("hidden");document.getElementById("mNewKm").focus();});
+document.getElementById("openKmModalBtn").addEventListener("click",openKmModal);
 document.getElementById("xKmModal").addEventListener("click",closeKm);
 document.getElementById("cancelKmModal").addEventListener("click",closeKm);
 document.getElementById("kmModalForm").addEventListener("submit",e=>{e.preventDefault();const c=car();if(!c)return;c.km=Math.max(0,Number(document.getElementById("mNewKm").value)||0);closeKm();save();toast("Kilometraje y avisos recalculados");});
