@@ -164,7 +164,7 @@ textarea{min-height:64px;resize:vertical}
             <div class="stat"><div class="lbl">AVISOS</div><div id="pAlerts" class="val">0</div></div>
             <div class="stat"><div class="lbl">AVERÍAS</div><div id="pBreaks" class="val">0</div></div>
           </div>
-          <div class="sec"><div class="flex"><div class="stitle">Requiere tu atención</div><button id="goAlertsLink" class="btn-l" style="padding:4px 9px;font-size:.76rem" type="button">Ver todos</button></div><div id="pAttBox"></div></div>
+          <div id="panelAttentionSec" class="sec"><div class="flex"><div class="stitle">Requiere tu atención</div><button id="goAlertsLink" class="btn-l" style="padding:4px 9px;font-size:.76rem" type="button">Ver todos</button></div><div id="pAttBox"></div></div>
           <div class="sec"><div class="flex"><div class="stitle">Tus coches</div><button id="goCarsLink" class="btn-l" style="padding:4px 9px;font-size:.76rem" type="button">Gestionar</button></div><div id="pCarsGrid" class="g2"></div></div>
         </section>
 
@@ -220,10 +220,10 @@ textarea{min-height:64px;resize:vertical}
                   <div id="bigKm" class="val" style="font-size:1.65rem">0 km</div>
                   <div class="muted" style="font-size:.74rem;margin-top:2px">Doble clic para actualizar</div>
                 </div>
-                <div id="heroAlertsCard" class="stat card-click" style="margin-bottom:0" title="Ir a la sección de avisos">
+                <div id="heroAlertsCard" class="stat card-click" style="margin-bottom:0" title="Ir al panel para ver qué requiere tu atención">
                   <div class="lbl">AVISOS ACTIVOS</div>
                   <div id="bigAlerts" class="val" style="font-size:1.65rem">Ninguno</div>
-                  <div class="muted" style="font-size:.74rem;margin-top:2px">Pulsa para ver avisos</div>
+                  <div class="muted" style="font-size:.74rem;margin-top:2px">Pulsa para ver qué requiere atención</div>
                 </div>
               </div>
             </div>
@@ -420,7 +420,7 @@ textarea{min-height:64px;resize:vertical}
           <div class="head">
             <div>
               <h1 class="h1">Piezas utilizadas</h1>
-              <div class="sub">Elige primero el concepto que quieras consultar (ej. Aceite 5W40) y filtra o busca dentro de ese concepto.</div>
+              <div class="sub">Elige un concepto (ej. Aceite 5W40) o busca directamente por nombre de pieza o referencia.</div>
             </div>
             <div class="acts">
               <select id="matConceptSel" style="width:auto;min-width:195px;padding:7px 10px;font-size:.84rem;font-weight:600"></select>
@@ -739,6 +739,15 @@ function goToAlert(item){
   render();
 }
 
+function goToAttentionPanel(){
+  setSec("panel");
+  render();
+  const sec=document.getElementById("panelAttentionSec");
+  if(sec){
+    sec.scrollIntoView({behavior:"smooth",block:"start"});
+  }
+}
+
 const lCost=l=>(l.parts||[]).reduce((s,p)=>s+(Number(p.cantidad)||0)*(Number(p.precio)||0),0)+(Number(l.manoObra)||0);
 const cSpend=c=>(c.logs||[]).reduce((s,l)=>s+lCost(l),0)+(c.planTasks||[]).reduce((s,p)=>s+(p.current?lCost(p.current):0),0)+(c.tires||[]).reduce((s,t)=>s+Number(t.coste||0),0)+(c.hechos||[]).reduce((s,h)=>s+Number(h.coste||0),0);
 
@@ -1054,12 +1063,11 @@ function getCarMaterials(x){
   const list=[];
   (x.planTasks||[]).forEach(p=>{
     if(p.current&&Array.isArray(p.current.parts)){
-      p.current.parts.forEach((pr,idx)=>list.push({
+      p.current.parts.forEach(pr=>list.push({
         p:pr,
         carId:x.id,
         source:"current",
         planTask:p,
-        partIdx:idx,
         tag:"En curso",
         concepto:p.nombre,
         fecha:p.current.fecha||""
@@ -1068,12 +1076,11 @@ function getCarMaterials(x){
   });
   (x.logs||[]).forEach(l=>{
     if(Array.isArray(l.parts)){
-      l.parts.forEach((pr,idx)=>list.push({
+      l.parts.forEach(pr=>list.push({
         p:pr,
         carId:x.id,
         source:"log",
         log:l,
-        partIdx:idx,
         tag:l.tipo==="Avería"?"Avería":"Anterior",
         concepto:l.desc||"",
         fecha:l.fecha||""
@@ -1106,9 +1113,9 @@ function deleteMaterialEntry(m,x){
   const label="Pieza: "+(m.p.nombre||"Material")+(m.p.referencia?" ("+m.p.referencia+")":"")+" · "+x.alias;
   pedirConfirmacionBorrado(label,()=>{
     if(m.source==="current"&&m.planTask&&m.planTask.current&&Array.isArray(m.planTask.current.parts)){
-      m.planTask.current.parts.splice(m.partIdx,1);
+      m.planTask.current.parts=m.planTask.current.parts.filter(item=>item!==m.p);
     }else if(m.source==="log"&&m.log&&Array.isArray(m.log.parts)){
-      m.log.parts.splice(m.partIdx,1);
+      m.log.parts=m.log.parts.filter(item=>item!==m.p);
     }
     save();
     toast("Pieza eliminada");
@@ -1116,9 +1123,12 @@ function deleteMaterialEntry(m,x){
 }
 
 function matchesMatQuery(m,q,conceptKey){
-  if(!conceptKey)return false;
-  if((m.concepto||"").trim().toLowerCase()!==conceptKey)return false;
-  if(!q)return true;
+  if(conceptKey){
+    if((m.concepto||"").trim().toLowerCase()!==conceptKey)return false;
+    if(!q)return true;
+  }else{
+    if(!q)return false;
+  }
   const hay=[
     m.p.nombre,
     m.p.referencia,
@@ -1169,8 +1179,8 @@ function renderMaterialsSection(){
   const q=(document.getElementById("matSearchInp").value||"").trim().toLowerCase();
   box.innerHTML="";
 
-  if(!concept.key){
-    box.innerHTML='<div class="empty">'+(q?'Elige primero un concepto en el desplegable para filtrar por <strong>"'+esc(q)+'"</strong> dentro de ese concepto.':'Selecciona un concepto en el desplegable (por ejemplo, <strong>Aceite 5W40</strong>) para ver únicamente las piezas de ese concepto.')+'</div>';
+  if(!concept.key&&!q){
+    box.innerHTML='<div class="empty">Selecciona un concepto en el desplegable (ej. <strong>Aceite 5W40</strong>) o escribe el nombre/referencia de una pieza en el buscador.</div>';
     return;
   }
 
@@ -1179,9 +1189,10 @@ function renderMaterialsSection(){
     const totalCar=items.reduce((s,m)=>s+(Number(m.p.cantidad)||0)*(Number(m.p.precio)||0),0);
     const sec=document.createElement("div");
     sec.className="sec";
-    const headHtml='<div class="flex" style="margin-bottom:8px"><div><div class="stitle" style="margin:0">'+esc(x.alias)+' <span class="pill">'+esc(concept.label||concept.key)+'</span> <span class="muted">· '+esc([x.marca,x.modelo,x.matricula].filter(Boolean).join(" · "))+'</span></div></div><span class="pill">'+items.length+' pieza(s) · '+eur(totalCar)+'</span></div>';
+    const activeBadge=concept.key?esc(concept.label||concept.key):'Búsqueda: "'+esc(q)+'"';
+    const headHtml='<div class="flex" style="margin-bottom:8px"><div><div class="stitle" style="margin:0">'+esc(x.alias)+' <span class="pill">'+activeBadge+'</span> <span class="muted">· '+esc([x.marca,x.modelo,x.matricula].filter(Boolean).join(" · "))+'</span></div></div><span class="pill">'+items.length+' pieza(s) · '+eur(totalCar)+'</span></div>';
     if(!items.length){
-      sec.innerHTML=headHtml+'<div class="empty">'+(q?'Sin piezas con "'+esc(q)+'" en el concepto <strong>'+esc(concept.label||concept.key)+'</strong> para '+esc(x.alias)+'.':'Sin piezas registradas para el concepto <strong>'+esc(concept.label||concept.key)+'</strong> en '+esc(x.alias)+'.')+'</div>';
+      sec.innerHTML=headHtml+'<div class="empty">Sin piezas encontradas para ese filtro en '+esc(x.alias)+'.</div>';
     }else{
       sec.innerHTML=headHtml;
       items.forEach(m=>{
@@ -1302,7 +1313,7 @@ function render(){
   (c.tires||[]).forEach(t=>{
     const kmHechos=Math.max(0,Number(c.km||0)-Number(t.kmMont||0));
     const d=document.createElement("div");d.className="card";
-    d.innerHTML='<div class="flex"><div><strong>'+esc(t.marca)+' '+esc(t.modelo)+'</strong> '+(t.medida?'<span class="pill">'+esc(t.medida)+'</span>':'')+'<div class="muted">Montadas '+fdt(t.fecha)+' a '+kmf(t.kmMont)+'</div></div><div style="text-align:right"><strong>'+kmf(kmHechos)+'</strong><div class="muted">'+eur(t.coste)+'</div></div></div>'+(t.notas?'<div class="box-note"><strong>Notas / Rotaciones / Incidencias:</strong>\n'+esc(t.notas)+'</div>':'<div class="muted" style="margin-top:8px">Sin notas de rotaciones o incidencias todavía.</div>')+'<div class="acts" style="margin-top:10px"><button type="button" class="btn-l ed" style="padding:4px 9px;font-size:.76rem">Editar</button><button type="button" class="btn-del dl">Borrar</button></div>';
+    d.innerHTML='<div class="flex"><div><strong>'+esc(t.marca)+' '+esc(t.modelo)+'</strong> '+(t.medida?'<span class="pill">'+esc(t.medida)+'</span>':'')+'<div class="muted">Montadas con fecha '+esc(fdt(t.fecha)||"sin fecha")+' y con '+kmf(t.kmMont)+'</div></div><div style="text-align:right"><div class="lbl">KM RECORRIDOS</div><strong>'+kmf(kmHechos)+'</strong><div class="muted">'+eur(t.coste)+'</div></div></div>'+(t.notas?'<div class="box-note"><strong>Notas / Rotaciones / Incidencias:</strong>\n'+esc(t.notas)+'</div>':'<div class="muted" style="margin-top:8px">Sin notas de rotaciones o incidencias todavía.</div>')+'<div class="acts" style="margin-top:10px"><button type="button" class="btn-l ed" style="padding:4px 9px;font-size:.76rem">Editar</button><button type="button" class="btn-del dl">Borrar</button></div>';
     d.querySelector(".ed").addEventListener("click",()=>openTireForm(t));
     d.querySelector(".dl").addEventListener("click",()=>{
       pedirConfirmacionBorrado("Ruedas: "+t.marca+" "+t.modelo,()=>{
@@ -1342,8 +1353,8 @@ document.getElementById("heroKmCard").addEventListener("touchend",e=>{
   if(now-lastKmTap<350){e.preventDefault();openKmModal();}
   lastKmTap=now;
 });
-document.getElementById("heroAlertsCard").addEventListener("click",()=>setSub("avisos"));
-document.getElementById("heroAlertsCard").addEventListener("dblclick",()=>setSub("avisos"));
+document.getElementById("heroAlertsCard").addEventListener("click",goToAttentionPanel);
+document.getElementById("heroAlertsCard").addEventListener("dblclick",goToAttentionPanel);
 
 document.getElementById("kPendingCard").addEventListener("click",()=>{
   const c=car();if(!c)return;
