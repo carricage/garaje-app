@@ -16,9 +16,6 @@ body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:var(--bg
 .snav{display:flex;flex-direction:column;gap:4px}
 .sbtn{border:0;background:0;color:var(--sbt);padding:9px 12px;border-radius:8px;font-size:.88rem;font-weight:500;text-align:left;cursor:pointer}
 .sbtn:hover{background:rgba(255,255,255,.05);color:#e4e4e7}.sbtn.active{background:var(--sba);color:#fff;font-weight:600}
-.sfoot{border-top:1px solid rgba(255,255,255,.08);padding-top:10px;display:flex;flex-direction:column;gap:6px}
-.smini{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);color:#d4d4d8;padding:6px 8px;border-radius:7px;font-size:.76rem;font-weight:600;cursor:pointer;text-align:center}
-.smini:hover{background:rgba(255,255,255,.09)}
 .wrap{flex:1;padding:20px;display:flex;justify-content:center;align-items:flex-start;min-width:0}
 .stage{width:100%;max-width:1100px;transition:max-width .18s ease}
 .stage.vp-tablet{max-width:768px;background:var(--bg);border:1px solid var(--bd);border-radius:16px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,.08)}
@@ -28,8 +25,6 @@ body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:var(--bg
 .vp-btn{border:0;background:0;color:var(--mu);padding:4px 10px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer}
 .vp-btn.active{background:var(--sb);color:#fff}
 .data-bar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px;padding:8px 12px;background:var(--sf);border:1px solid var(--bd);border-radius:10px}
-.mob-quick-bar{display:none}
-.stage.vp-mobile .mob-quick-bar,.stage.vp-tablet .mob-quick-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;padding:7px 10px;background:var(--sf);border:1px solid var(--bd);border-radius:10px}
 .mobnav{display:none}
 .stage.vp-mobile .mobnav,.stage.vp-tablet .mobnav{display:grid;grid-template-columns:repeat(4,1fr);background:var(--sb);border-radius:10px;padding:5px;margin-top:16px}
 .stage.vp-mobile .mobnav button,.stage.vp-tablet .mobnav button{border:0;background:0;color:var(--sbt);font-size:.72rem;font-weight:600;padding:6px 2px;border-radius:7px;cursor:pointer}
@@ -42,8 +37,8 @@ body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:var(--bg
 .stage.vp-mobile .stat .muted{font-size:.66rem;line-height:1.25;margin-top:2px}
 
 @media(max-width:600px){
-  .sidebar,.vp-bar,.data-bar{display:none!important}
-  .mob-quick-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;padding:7px 10px;background:var(--sf);border:1px solid var(--bd);border-radius:10px}
+  .sidebar,.vp-bar{display:none!important}
+  .data-bar{padding:7px 10px;margin-bottom:10px}
   .wrap{padding:12px}
   .stage,.stage.vp-tablet,.stage.vp-mobile{
     max-width:100%!important;
@@ -129,24 +124,10 @@ textarea{min-height:64px;resize:vertical}
         <button class="sbtn" type="button" data-sec="materiales">Piezas utilizadas</button>
       </nav>
     </div>
-    <div class="sfoot">
-      <button id="btnExp" class="smini" type="button">Copiar</button>
-      <button id="btnImpSide" class="smini" type="button">Restaurar</button>
-      <input type="file" id="impInp" accept=".json,application/json" class="hidden" />
-    </div>
   </aside>
 
   <div class="wrap">
     <div id="vpStage" class="stage">
-      <div class="mob-quick-bar">
-        <span class="muted" style="font-size:.76rem">Copia:</span>
-        <div class="acts" style="gap:6px">
-          <button id="btnExpMob" class="btn-l" style="padding:4px 9px;font-size:.75rem" type="button">Copiar</button>
-          <button id="btnImpMob" class="btn-l" style="padding:4px 9px;font-size:.75rem" type="button">Restaurar</button>
-          <input type="file" id="impInpMob" accept=".json,application/json" class="hidden" />
-        </div>
-      </div>
-
       <div class="data-bar">
         <span id="trialStatusTxt" class="muted" style="font-size:.78rem">Prueba activa: 15 días · Máx. 2 vehículos</span>
         <div class="acts">
@@ -1219,8 +1200,8 @@ function render(){
   const stEl=document.getElementById("trialStatusTxt");
   if(stEl){
     stEl.textContent=ti.expired
-      ?("Prueba caducada ("+TRIAL_DAYS+" días) · Solo consulta · Máx. "+MAX_CARS_TRIAL+" vehículos")
-      :("Prueba: "+ti.daysLeft+" día(s) restantes · Máx. "+MAX_CARS_TRIAL+" vehículos");
+      ?("Versión de prueba caducada ("+TRIAL_DAYS+" días · 0 días restantes) · Máx. "+MAX_CARS_TRIAL+" vehículos")
+      :("Versión de prueba · Quedan "+ti.daysLeft+" día(s) de "+TRIAL_DAYS+" · Máx. "+MAX_CARS_TRIAL+" vehículos");
   }
 
   const allAtt=[];let brkTot=0;
@@ -1653,15 +1634,9 @@ function handleImportFile(file,inputEl){
   r.readAsText(file);
 }
 
-document.getElementById("btnExp").addEventListener("click",exportJson);
 document.getElementById("btnExpTop").addEventListener("click",exportJson);
-document.getElementById("btnExpMob").addEventListener("click",exportJson);
-document.getElementById("btnImpSide").addEventListener("click",()=>triggerRestorePicker("impInp"));
 document.getElementById("btnImpTop").addEventListener("click",()=>triggerRestorePicker("impInpTop"));
-document.getElementById("btnImpMob").addEventListener("click",()=>triggerRestorePicker("impInpMob"));
-document.getElementById("impInp").addEventListener("change",e=>handleImportFile(e.target.files[0],e.target));
 document.getElementById("impInpTop").addEventListener("change",e=>handleImportFile(e.target.files[0],e.target));
-document.getElementById("impInpMob").addEventListener("change",e=>handleImportFile(e.target.files[0],e.target));
 
 if(window.innerWidth<=600){
   document.getElementById("vpStage").classList.remove("vp-tablet","vp-mobile");
