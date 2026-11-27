@@ -420,11 +420,11 @@ textarea{min-height:64px;resize:vertical}
           <div class="head">
             <div>
               <h1 class="h1">Piezas utilizadas</h1>
-              <div class="sub">Elige un concepto (ej. Aceite 5W40) o busca directamente por nombre de pieza o referencia.</div>
+              <div class="sub">Elige una pieza en el desplegable o busca en el recuadro por pieza, referencia o concepto.</div>
             </div>
             <div class="acts">
               <select id="matConceptSel" style="width:auto;min-width:195px;padding:7px 10px;font-size:.84rem;font-weight:600"></select>
-              <input id="matSearchInp" type="search" placeholder="Buscar pieza o referencia..." style="width:auto;min-width:210px;padding:7px 10px;font-size:.84rem" />
+              <input id="matSearchInp" type="search" placeholder="Buscar pieza, ref o concepto..." style="width:auto;min-width:225px;padding:7px 10px;font-size:.84rem" />
               <button id="matClearBtn" class="btn-l" style="padding:7px 10px;font-size:.8rem" type="button">Limpiar</button>
               <select id="matCarSel" style="width:auto;min-width:200px;padding:7px 10px;font-size:.84rem;font-weight:600"></select>
             </div>
@@ -1122,43 +1122,34 @@ function deleteMaterialEntry(m,x){
   });
 }
 
-function matchesMatQuery(m,q,conceptKey){
-  if(conceptKey){
-    if((m.concepto||"").trim().toLowerCase()!==conceptKey)return false;
-    if(!q)return true;
-  }else{
-    if(!q)return false;
-  }
+function matchesMatQuery(m,q,partKey){
+  if(partKey&&(m.p.nombre||"").trim().toLowerCase()!==partKey)return false;
+  if(!q)return Boolean(partKey);
   const hay=[
     m.p.nombre,
     m.p.referencia,
     m.p.tienda,
-    m.concepto,
-    m.tag
+    m.concepto
   ].filter(Boolean).join(" ").toLowerCase();
   return hay.includes(q);
 }
 
 function syncMatConceptOptions(targetCars){
   const cSel=document.getElementById("matConceptSel");
-  const conceptMap=new Map();
+  const partMap=new Map();
   targetCars.forEach(x=>{
-    (x.planTasks||[]).forEach(p=>{
-      const name=(p.nombre||"").trim();
-      if(name&&!conceptMap.has(name.toLowerCase()))conceptMap.set(name.toLowerCase(),name);
-    });
     getCarMaterials(x).forEach(m=>{
-      const name=(m.concepto||"").trim();
-      if(name&&!conceptMap.has(name.toLowerCase()))conceptMap.set(name.toLowerCase(),name);
+      const name=(m.p.nombre||"").trim();
+      if(name&&!partMap.has(name.toLowerCase()))partMap.set(name.toLowerCase(),name);
     });
   });
-  const prevConcept=cSel.value||"";
-  const opts=['<option value="">Elige un concepto...</option>'];
-  [...conceptMap.entries()].sort((a,b)=>a[1].localeCompare(b[1],"es")).forEach(([key,label])=>{
-    opts.push('<option value="'+esc(key)+'"'+(prevConcept===key?" selected":"")+'>'+esc(label)+'</option>');
+  const prevPart=cSel.value||"";
+  const opts=['<option value="">Todas las piezas (desplegable)</option>'];
+  [...partMap.entries()].sort((a,b)=>a[1].localeCompare(b[1],"es")).forEach(([key,label])=>{
+    opts.push('<option value="'+esc(key)+'"'+(prevPart===key?" selected":"")+'>'+esc(label)+'</option>');
   });
   cSel.innerHTML=opts.join("");
-  return{key:cSel.value||"",label:conceptMap.get(cSel.value||"")||""};
+  return{key:cSel.value||"",label:partMap.get(cSel.value||"")||""};
 }
 
 function renderMaterialsSection(){
@@ -1166,7 +1157,7 @@ function renderMaterialsSection(){
   const box=document.getElementById("gMats");
   if(!db.cars.length){
     sel.innerHTML="";
-    document.getElementById("matConceptSel").innerHTML='<option value="">Elige un concepto...</option>';
+    document.getElementById("matConceptSel").innerHTML='<option value="">Todas las piezas (desplegable)</option>';
     box.innerHTML='<div class="empty">No hay vehículos registrados todavía. Añade uno en la sección <strong>Coches</strong> para registrar piezas utilizadas.</div>';
     return;
   }
@@ -1175,21 +1166,24 @@ function renderMaterialsSection(){
     +(db.cars.length>1?'<option value="__all__"'+(curVal==="__all__"?" selected":"")+'>Todos los vehículos (agrupados)</option>':"");
   const mode=sel.value||db.activeId;
   const targetCars=mode==="__all__"?db.cars:db.cars.filter(x=>x.id===mode);
-  const concept=syncMatConceptOptions(targetCars);
+  const partFilter=syncMatConceptOptions(targetCars);
   const q=(document.getElementById("matSearchInp").value||"").trim().toLowerCase();
   box.innerHTML="";
 
-  if(!concept.key&&!q){
-    box.innerHTML='<div class="empty">Selecciona un concepto en el desplegable (ej. <strong>Aceite 5W40</strong>) o escribe el nombre/referencia de una pieza en el buscador.</div>';
+  if(!partFilter.key&&!q){
+    box.innerHTML='<div class="empty">Elige una pieza en el desplegable o escribe en el buscador para filtrar por pieza, referencia o concepto.</div>';
     return;
   }
 
   targetCars.forEach(x=>{
-    const items=getCarMaterials(x).filter(m=>matchesMatQuery(m,q,concept.key));
+    const items=getCarMaterials(x).filter(m=>matchesMatQuery(m,q,partFilter.key));
     const totalCar=items.reduce((s,m)=>s+(Number(m.p.cantidad)||0)*(Number(m.p.precio)||0),0);
     const sec=document.createElement("div");
     sec.className="sec";
-    const activeBadge=concept.key?esc(concept.label||concept.key):'Búsqueda: "'+esc(q)+'"';
+    const tags=[];
+    if(partFilter.key)tags.push('Pieza: '+esc(partFilter.label||partFilter.key));
+    if(q)tags.push('Buscar: "'+esc(q)+'"');
+    const activeBadge=tags.join(" · ");
     const headHtml='<div class="flex" style="margin-bottom:8px"><div><div class="stitle" style="margin:0">'+esc(x.alias)+' <span class="pill">'+activeBadge+'</span> <span class="muted">· '+esc([x.marca,x.modelo,x.matricula].filter(Boolean).join(" · "))+'</span></div></div><span class="pill">'+items.length+' pieza(s) · '+eur(totalCar)+'</span></div>';
     if(!items.length){
       sec.innerHTML=headHtml+'<div class="empty">Sin piezas encontradas para ese filtro en '+esc(x.alias)+'.</div>';
