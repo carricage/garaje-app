@@ -152,13 +152,8 @@ textarea{min-height:64px;resize:vertical}
             <div><div class="lbl">PANEL</div><h1 class="h1">Tu garaje, al día</h1><div class="sub">Mantenimientos, averías y avisos de tus coches en un solo sitio.</div></div>
             <div class="acts"><button id="btnPanelAdd" class="btn-o" type="button">+ Añadir coche</button></div>
           </div>
-          <div class="g3" style="margin-bottom:18px">
-            <div class="stat"><div class="lbl">COCHES</div><div id="pCars" class="val">0</div></div>
-            <div class="stat"><div class="lbl">AVISOS</div><div id="pAlerts" class="val">0</div></div>
-            <div class="stat"><div class="lbl">AVERÍAS</div><div id="pBreaks" class="val">0</div></div>
-          </div>
-          <div id="panelAttentionSec" class="sec"><div class="flex"><div class="stitle">Requiere tu atención</div><button id="goAlertsLink" class="btn-l" style="padding:4px 9px;font-size:.76rem" type="button">Ver todos</button></div><div id="pAttBox"></div></div>
           <div class="sec"><div class="flex"><div class="stitle">Tus coches</div><button id="goCarsLink" class="btn-l" style="padding:4px 9px;font-size:.76rem" type="button">Gestionar</button></div><div id="pCarsGrid" class="g2"></div></div>
+          <div id="panelAttentionSec" class="sec"><div class="flex"><div class="stitle">Requiere tu atención</div><button id="goAlertsLink" class="btn-l" style="padding:4px 9px;font-size:.76rem" type="button">Ver todos</button></div><div id="pAttBox"></div></div>
         </section>
 
         <section id="sec-coches" class="hidden">
@@ -208,15 +203,15 @@ textarea{min-height:64px;resize:vertical}
               </div>
 
               <div class="g2" style="margin-top:16px;margin-bottom:0">
-                <div id="heroKmCard" class="stat card-click" style="margin-bottom:0" title="Haz doble clic para actualizar km">
+                <div id="heroKmCard" class="stat card-click" style="margin-bottom:0" title="Doble clic en PC o un toque en tablet/móvil para actualizar km">
                   <div class="lbl">KILOMETRAJE</div>
                   <div id="bigKm" class="val" style="font-size:1.65rem">0 km</div>
-                  <div class="muted" style="font-size:.74rem;margin-top:2px">Doble clic para actualizar</div>
+                  <div class="muted" style="font-size:.74rem;margin-top:2px">Doble clic en PC · 1 toque en tablet/móvil</div>
                 </div>
-                <div id="heroAlertsCard" class="stat card-click" style="margin-bottom:0" title="Ir al panel para ver qué requiere tu atención">
+                <div id="heroAlertsCard" class="stat card-click" style="margin-bottom:0" title="Doble clic en PC o un toque en tablet/móvil para ver qué requiere atención">
                   <div class="lbl">AVISOS ACTIVOS</div>
                   <div id="bigAlerts" class="val" style="font-size:1.65rem">Ninguno</div>
-                  <div class="muted" style="font-size:.74rem;margin-top:2px">Pulsa para ver qué requiere atención</div>
+                  <div class="muted" style="font-size:.74rem;margin-top:2px">Doble clic en PC · 1 toque en tablet/móvil</div>
                 </div>
               </div>
             </div>
@@ -279,7 +274,7 @@ textarea{min-height:64px;resize:vertical}
               <div class="flex" style="margin-bottom:10px">
                 <div>
                   <div class="stitle" style="margin:0">Mantenimiento en curso y plan</div>
-                  <div class="sub" style="margin:0">Edita o añade piezas al mantenimiento en curso sin duplicarlo; al pulsar <strong>Realizado</strong> pasa a anteriores y abre el siguiente ciclo.</div>
+                  <div class="sub" style="margin:0">Ordenados por menor km restante; al pulsar <strong>Realizado</strong> pasan a anteriores y abren el siguiente ciclo.</div>
                 </div>
                 <div class="acts"><button id="openMaint2" class="btn-l" type="button">Piezas utilizadas</button><button id="addPtBtn" class="btn-o" type="button">+ Tarea</button></div>
               </div>
@@ -504,6 +499,7 @@ const kbFromDataUrl=u=>{if(!u)return"";const b=Math.round((u.length*3)/4);return
 const car=()=>db.cars.find(x=>x.id===db.activeId)||db.cars[0]||null;
 const toast=m=>{const el=document.getElementById("toast");el.textContent=m;el.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove("show"),1800);};
 const normId=v=>String(v||"").toUpperCase().replace(/[\s-]/g,"").trim();
+const isTabletOrMobileView=()=>window.innerWidth<=900||document.getElementById("vpStage").classList.contains("vp-tablet")||document.getElementById("vpStage").classList.contains("vp-mobile");
 
 let infoModalOnClose=null;
 function showNoticeModal({title="Aviso",tag="INFORMACIÓN",main="",sub="",btnText="Entendido",onClose=null}){
@@ -706,9 +702,9 @@ function evalAviso(a){
 function calcTask(t,curKm){
   const iv=Math.max(1,Number(t.intervaloKm)||10000),lk=Number(t.ultimoKm)||0,nk=lk+iv,rem=nk-Number(curKm||0);
   const pct=Math.min(100,Math.max(0,((Number(curKm||0)-lk)/iv)*100));
-  if(rem<0)return{lv:"bad",lbl:"VENCIDO",txt:"Pasado "+kmf(Math.abs(rem)),nk,pct};
-  if(rem<=1000)return{lv:"warn",lbl:"PRÓXIMO",txt:"Faltan "+kmf(rem),nk,pct};
-  return{lv:"ok",lbl:"AL DÍA",txt:"Faltan "+kmf(rem),nk,pct};
+  if(rem<0)return{lv:"bad",lbl:"VENCIDO",txt:"Pasado "+kmf(Math.abs(rem)),nk,rem,pct};
+  if(rem<=1000)return{lv:"warn",lbl:"PRÓXIMO",txt:"Faltan "+kmf(rem),nk,rem,pct};
+  return{lv:"ok",lbl:"AL DÍA",txt:"Faltan "+kmf(rem),nk,rem,pct};
 }
 
 function activeAlerts(c){
@@ -1197,11 +1193,8 @@ function render(){
       :("Versión de prueba · Quedan "+ti.daysLeft+" día(s) de "+TRIAL_DAYS+" · Máx. "+MAX_CARS_TRIAL+" vehículos");
   }
 
-  const allAtt=[];let brkTot=0;
-  db.cars.forEach(c=>{activeAlerts(c).forEach(x=>allAtt.push(x));(c.logs||[]).forEach(l=>{if(l.tipo==="Avería")brkTot++;});});
-  document.getElementById("pCars").textContent=db.cars.length;
-  document.getElementById("pAlerts").textContent=allAtt.length;
-  document.getElementById("pBreaks").textContent=brkTot;
+  const allAtt=[];
+  db.cars.forEach(c=>{activeAlerts(c).forEach(x=>allAtt.push(x));});
   renderAlertCards("pAttBox",allAtt,'<div class="empty">Todo al día. Al actualizar km o acercarse fechas verás los avisos aquí.</div>');
 
   const pGrid=document.getElementById("pCarsGrid");pGrid.innerHTML="";
@@ -1255,7 +1248,8 @@ function render(){
   document.getElementById("rDocs").innerHTML=docCard(seg)+docCard(itv);
 
   const ptL=document.getElementById("ptList");ptL.innerHTML="";
-  (c.planTasks||[]).forEach(p=>{
+  const sortedTasks=(c.planTasks||[]).slice().sort((a,b)=>calcTask(a,c.km).rem-calcTask(b,c.km));
+  sortedTasks.forEach(p=>{
     const s=calcTask(p,c.km);
     const cur=getCurrentData(p,c);
     const curPartsHtml=(cur.parts&&cur.parts.length)
@@ -1326,15 +1320,27 @@ function render(){
   renderMaterialsSection();
 }
 
-document.getElementById("heroKmCard").addEventListener("dblclick",openKmModal);
-let lastKmTap=0;
-document.getElementById("heroKmCard").addEventListener("touchend",e=>{
-  const now=Date.now();
-  if(now-lastKmTap<350){e.preventDefault();openKmModal();}
-  lastKmTap=now;
-});
-document.getElementById("heroAlertsCard").addEventListener("click",goToAttentionPanel);
-document.getElementById("heroAlertsCard").addEventListener("dblclick",goToAttentionPanel);
+function bindHeroAction(el,action){
+  let touchHandled=false;
+  el.addEventListener("touchend",e=>{
+    if(!isTabletOrMobileView())return;
+    touchHandled=true;
+    e.preventDefault();
+    action();
+    setTimeout(()=>{touchHandled=false;},350);
+  });
+  el.addEventListener("click",()=>{
+    if(touchHandled)return;
+    if(isTabletOrMobileView())action();
+  });
+  el.addEventListener("dblclick",()=>{
+    if(touchHandled)return;
+    if(!isTabletOrMobileView())action();
+  });
+}
+
+bindHeroAction(document.getElementById("heroKmCard"),openKmModal);
+bindHeroAction(document.getElementById("heroAlertsCard"),goToAttentionPanel);
 
 document.getElementById("kPendingCard").addEventListener("click",()=>{
   const c=car();if(!c)return;
